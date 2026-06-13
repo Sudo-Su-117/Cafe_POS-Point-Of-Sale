@@ -29,6 +29,7 @@ import {
 import { ProductsService } from './services/products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { RecommendRequestDto } from './dto/recommend-request.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -219,5 +220,21 @@ export class ProductsController {
   async delete(@Param('id') id: string) {
     this.logger.log('Delete product: ' + id);
     return this.productsService.delete(id);
+  }
+
+  @Post('recommend')
+  @Roles('ADMIN', 'EMPLOYEE')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get product recommendations',
+    description: 'Get dynamic product recommendations based on active cart items',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recommendation retrieved successfully',
+  })
+  async recommend(@Body() recommendDto: RecommendRequestDto) {
+    this.logger.log('Get recommendations request for ' + recommendDto.productIds.length + ' products');
+    return this.productsService.recommend(recommendDto);
   }
 }

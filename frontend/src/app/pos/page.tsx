@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
-import { ProductGrid } from "@/features/pos/components/ProductGrid";
+import { ProductGrid, allProducts } from "@/features/pos/components/ProductGrid";
 import { Cart, CartItem } from "@/features/pos/components/Cart";
 import { FloorPopup } from "@/features/pos/components/FloorPopup";
 import { PaymentModal } from "@/features/pos/components/PaymentModal";
@@ -15,6 +15,85 @@ export default function POSPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [kitchenSent, setKitchenSent] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [recommendation, setRecommendation] = useState<{
+    recommendedProductId: string;
+    recommendedProductName: string;
+    recommendedProductPrice: number;
+    reason: string;
+  } | null>(null);
+
+  // Auto-login to obtain JWT token for AI recommendations
+  useEffect(() => {
+    async function autoLogin() {
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "admin@cafe.com",
+            password: "Admin@123",
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.accessToken);
+        }
+      } catch (err) {
+        console.error("POS recommendation auto-login error:", err);
+      }
+    }
+    autoLogin();
+  }, []);
+
+  // Fetch recommendation whenever cart items change
+  useEffect(() => {
+    if (!token) return;
+    if (cartItems.length === 0) {
+      setRecommendation(null);
+      return;
+    }
+
+    const productNames = cartItems.map(item => item.name);
+    
+    const fetchRecommendation = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/products/recommend", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productIds: productNames,
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.recommendedProductName) {
+            setRecommendation(data);
+          } else {
+            setRecommendation(null);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch recommendation:", err);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchRecommendation, 300);
+    return () => clearTimeout(timeoutId);
+  }, [cartItems, token]);
+
+  const handleAddRecommendation = () => {
+    if (!recommendation) return;
+    const foundProduct = allProducts.find(
+      p => p.name.toLowerCase() === recommendation.recommendedProductName.toLowerCase()
+    );
+    if (foundProduct) {
+      addToCart(foundProduct);
+    }
+  };
 
   const addToCart = (product: { id: number; name: string; price: number; emoji: string }) => {
     setCartItems(prev => {
@@ -89,6 +168,8 @@ export default function POSPage() {
             onRemove={removeItem}
             onSendToKitchen={sendToKitchen}
             onCheckout={() => setShowPayment(true)}
+            recommendation={recommendation}
+            onAddRecommendation={handleAddRecommendation}
           />
         </div>
       </div>

@@ -12,19 +12,19 @@ interface Product {
   emoji: string;
 }
 
-const allProducts: Product[] = [
-  { id: 1,  name: "Espresso",       price: 3.50,  category: "Espresso",   categoryColor: "#C9783A", emoji: "☕" },
-  { id: 2,  name: "Flat White",     price: 4.00,  category: "Espresso",   categoryColor: "#C9783A", emoji: "☕" },
-  { id: 3,  name: "Cappuccino",     price: 4.50,  category: "Espresso",   categoryColor: "#C9783A", emoji: "☕" },
-  { id: 4,  name: "Cold Brew",      price: 5.00,  category: "Cold Brew",  categoryColor: "#866443", emoji: "🧊" },
-  { id: 5,  name: "Nitro Cold Brew",price: 5.50,  category: "Cold Brew",  categoryColor: "#866443", emoji: "🧊" },
-  { id: 6,  name: "Croissant",      price: 3.00,  category: "Pastries",   categoryColor: "#D6A144", emoji: "🥐" },
-  { id: 7,  name: "Blueberry Muffin",price:2.80,  category: "Pastries",   categoryColor: "#D6A144", emoji: "🧁" },
-  { id: 8,  name: "Club Sandwich",  price: 7.00,  category: "Sandwiches", categoryColor: "#789658", emoji: "🥪" },
-  { id: 9,  name: "BLT",            price: 6.50,  category: "Sandwiches", categoryColor: "#789658", emoji: "🥪" },
-  { id: 10, name: "Matcha Latte",   price: 4.80,  category: "Tea",        categoryColor: "#A86D4D", emoji: "🍵" },
-  { id: 11, name: "Chai",           price: 4.20,  category: "Tea",        categoryColor: "#A86D4D", emoji: "🍵" },
-  { id: 12, name: "Lemonade",       price: 3.80,  category: "Drinks",     categoryColor: "#78964E", emoji: "🍋" },
+export const allProducts: Product[] = [
+  { id: 1,  name: "Espresso",               price: 2.50,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
+  { id: 2,  name: "Caffe Latte",             price: 4.20,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
+  { id: 3,  name: "Cappuccino",              price: 4.20,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
+  { id: 4,  name: "Cold Brew Coffee",        price: 4.00,  category: "Cold Beverages",     categoryColor: "#866443", emoji: "🧊" },
+  { id: 5,  name: "Chocolate Milkshake",     price: 4.80,  category: "Cold Beverages",     categoryColor: "#866443", emoji: "🥛" },
+  { id: 6,  name: "Butter Croissant",        price: 3.00,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🥐" },
+  { id: 7,  name: "Blueberry Muffin",        price: 3.20,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🧁" },
+  { id: 8,  name: "Chicken Club Sandwich",   price: 8.50,  category: "Sandwiches & Wraps", categoryColor: "#789658", emoji: "🥪" },
+  { id: 9,  name: "Chocolate Chip Cookie",   price: 2.50,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🍪" },
+  { id: 10, name: "Matcha Latte",            price: 4.90,  category: "Tea & Chai",         categoryColor: "#A86D4D", emoji: "🍵" },
+  { id: 11, name: "Masala Chai",             price: 3.50,  category: "Tea & Chai",         categoryColor: "#A86D4D", emoji: "🧋" },
+  { id: 12, name: "New York Cheesecake",     price: 5.50,  category: "Desserts",           categoryColor: "#78964E", emoji: "🍰" },
 ];
 
 const categories = ["All", ...Array.from(new Set(allProducts.map(p => p.category)))];

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Minus, Plus, Trash2, Tag, Send, ChefHat } from "lucide-react";
+import { Minus, Plus, Trash2, Tag, Send, ChefHat, Sparkles } from "lucide-react";
 
 export interface CartItem {
   id: number;
@@ -17,6 +17,13 @@ interface CartProps {
   onRemove: (id: number) => void;
   onSendToKitchen: () => void;
   onCheckout: () => void;
+  recommendation?: {
+    recommendedProductId: string;
+    recommendedProductName: string;
+    recommendedProductPrice: number;
+    reason: string;
+  } | null;
+  onAddRecommendation?: () => void;
 }
 
 const TAX_RATE = 0.08;
@@ -27,7 +34,7 @@ const COUPON_CODES: Record<string, number> = {
   "SAVE5":  5,
 };
 
-export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout }: CartProps) {
+export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout, recommendation, onAddRecommendation }: CartProps) {
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; value: number } | null>(null);
   const [couponError, setCouponError] = useState("");
@@ -98,6 +105,32 @@ export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout
           ))
         )}
       </div>
+
+      {/* Recommended Add-on */}
+      {items.length > 0 && recommendation && (
+        <div className="mx-4 my-2 bg-primary/5 border border-primary/15 rounded-[14px] p-3.5 flex flex-col gap-2 animate-fade-in-up theme-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-primary text-[12px] font-bold">
+              <Sparkles size={13} className="animate-pulse" />
+              <span>Recommended Add-on</span>
+            </div>
+            <button
+              onClick={onAddRecommendation}
+              className="text-[12px] font-bold text-white bg-primary hover:brightness-105 px-3 py-1 rounded-[8px] transition-all"
+            >
+              Add +${recommendation.recommendedProductPrice.toFixed(2)}
+            </button>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <h4 className="text-[13px] font-bold text-text-heading">
+              {recommendation.recommendedProductName}
+            </h4>
+            <p className="text-[12px] text-text-muted italic leading-relaxed">
+              "{recommendation.reason}"
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       <div className="px-5 py-4 border-t border-border-custom flex flex-col gap-2.5">
