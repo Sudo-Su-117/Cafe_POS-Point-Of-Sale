@@ -198,6 +198,177 @@ Formatting Constraints:
         "source": "local-analytics-fallback",
         "insights": local_insights
     }
+class PromotionProduct(BaseModel):
+    id: str
+    name: str
+    price: float
+    stock: int
+    salesQty: int
+    category: str
+
+class GeneratePromotionRequest(BaseModel):
+    products: List[PromotionProduct]
+
+@app.post("/generate-promotion")
+async def generate_promotion(req: GeneratePromotionRequest):
+    import json
+
+    # Format the product lists for the prompt
+    products_list = []
+    for p in req.products:
+        products_list.append(
+            f"  * {p.name} (Category: {p.category}): Price: ${p.price:.2f}, Stock: {p.stock}, Sales (Last 30 Days): {p.salesQty} units"
+        )
+    products_str = "\n".join(products_list)
+
+    prompt = f"""You are a retail marketing and promotion optimization expert for a cafe.
+Analyze the following sales and inventory data for the last 30 days and generate a highly effective, structured promotion to boost sales of slow-moving items.
+
+Product Sales & Inventory Data:
+{products_str}
+
+Identify:
+- Strong-performing products (to use as traffic builders/anchors).
+- Slow-moving products (low sales, potentially high stock).
+
+Develop a promotion that:
+- Pairs a slow-moving item with a popular item, OR
+- Offers a percentage/fixed discount or BOGO on a slow-moving item.
+
+You MUST respond with a single valid JSON object containing exactly these keys:
+1. "analysis": A concise explanation of what's performing well vs poorly (e.g. "Coffee sales are strong. Burger sales are weak.").
+2. "name": A catchy name for the promotion (max 30 chars).
+3. "description": A clear description of the offer (e.g. "Buy 2 Burgers Get 20% Off").
+4. "type": Must be exactly one of: "percentage", "fixed_amount", "bogo".
+5. "value": A number (e.g. 20.0 for percentage, 5.0 for fixed_amount, or 0.0 for BOGO).
+6. "durationDays": Recommended promotion duration in days (integer, e.g. 7, 14, 30).
+
+Do not include any markup like ```json or trailing text. Return ONLY the JSON object.
+"""
+
+    print("="*60)
+    print("[AI Service] Generate Promotion Prompt:")
+    print(prompt)
+    print("="*60)
+
+    local_llm_url = os.getenv("LOCAL_LLM_URL")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+
+    # Helper function to clean and parse JSON
+    def clean_and_parse_json(text: str) -> Optional[Dict[str, Any]]:
+        text = text.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+        try:
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1:
+                text = text[start:end+1]
+            return json.loads(text)
+        except Exception as e:
+            print(f"JSON parsing error: {e}. Raw text: {text}")
+            return None
+
+    # 1. Try local LLM (e.g., LM Studio)
+    if local_llm_url:
+        try:
+            base_url = local_llm_url.rstrip('/')
+            url = f"{base_url}/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": local_llm_model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.5
+                }, timeout=60.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    parsed = clean_and_parse_json(text)
+                    if parsed:
+                        parsed["source"] = f"local-llm ({local_llm_model})"
+                        return parsed
+        except Exception as e:
+            print(f"Local LLM API error in promotion generation: {e}")
+
+    # 2. Try Gemini Cloud API
+    if gemini_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json={
+                    "contents": [{"parts": [{"text": prompt}]}]
+                }, timeout=30.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    parsed = clean_and_parse_json(text)
+                    if parsed:
+                        parsed["source"] = "gemini"
+                        return parsed
+        except Exception as e:
+            print(f"Gemini API error in promotion generation: {e}")
+
+    # 3. Try OpenAI Cloud API
+    if openai_key:
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {openai_key}"
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.5
+                }, timeout=30.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    parsed = clean_and_parse_json(text)
+                    if parsed:
+                        parsed["source"] = "openai"
+                        return parsed
+        except Exception as e:
+            print(f"OpenAI API error in promotion generation: {e}")
+
+    # 4. Fallback logic
+    sorted_prods = sorted(req.products, key=lambda x: x.salesQty)
+    slow_prod = sorted_prods[0] if sorted_prods else None
+    
+    analysis = "No products found to analyze."
+    name = "Smart Discount"
+    description = "Get a discount on selected items."
+    p_type = "percentage"
+    value = 10.0
+
+    if slow_prod:
+        analysis = f"Coffee sales are strong. {slow_prod.name} sales are weak (only {slow_prod.salesQty} sold)."
+        name = f"{slow_prod.name} Booster"
+        description = f"Buy 2 {slow_prod.name}s Get 20% Off"
+        p_type = "percentage"
+        value = 20.0
+
+    return {
+        "source": "local-fallback",
+        "analysis": analysis,
+        "name": name,
+        "description": description,
+        "type": p_type,
+        "value": value,
+        "durationDays": 7
+    }
 
 if __name__ == "__main__":
     import uvicorn
