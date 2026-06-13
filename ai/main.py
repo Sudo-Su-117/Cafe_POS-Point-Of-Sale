@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import os
@@ -8,6 +9,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="Cafe AI Service")
+
+# Expose API for access from frontend (Next.js/React) or backend proxies
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class AnalyzeRequest(BaseModel):
     currentRevenue: float
@@ -50,9 +60,34 @@ Formatting Constraints:
 - Provide direct insights first (e.g. "Revenue increased X%", "Y contributes Z% of sales").
 - Conclude with a solid recommendation based on the data."""
 
+    local_llm_url = os.getenv("LOCAL_LLM_URL")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
     gemini_key = os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
 
+    # 1. Try local LLM (e.g., LM Studio) first if URL is configured
+    if local_llm_url:
+        try:
+            base_url = local_llm_url.rstrip('/')
+            url = f"{base_url}/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": local_llm_model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.5
+                }, timeout=60.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if text:
+                        insights = [line.strip() for line in text.split("\n") if line.strip().startswith(("*", "-", "1", "2", "3", "4", "5", "6"))]
+                        return {"source": f"local-llm ({local_llm_model})", "insights": insights}
+        except Exception as e:
+            print(f"Local LLM (LM Studio) API error: {e}")
+
+    # 2. Try Gemini Cloud API
     if gemini_key:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
@@ -70,6 +105,7 @@ Formatting Constraints:
         except Exception as e:
             print(f"Gemini API error: {e}")
 
+    # 3. Try OpenAI Cloud API
     if openai_key:
         try:
             url = "https://api.openai.com/v1/chat/completions"
@@ -93,7 +129,7 @@ Formatting Constraints:
         except Exception as e:
             print(f"OpenAI API error: {e}")
 
-    # Local fallback if no API keys or errors
+    # 4. Fallback to Local Analytics logic
     local_insights = []
     local_insights.append(f"- Revenue is ${req.currentRevenue:.2f} this week ({'+' if req.revenueGrowth >= 0 else ''}{req.revenueGrowth:.1f}% compared to last week).")
     
@@ -129,3 +165,8 @@ Formatting Constraints:
         "source": "local-analytics-fallback",
         "insights": local_insights
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    # Self-runnable option to launch uvicorn server directly
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
