@@ -159,15 +159,43 @@ export class ReportsService {
     return end;
   }
 
-  async getAIInsights() {
-    const now = new Date();
-    const currentStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const prevStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  async getAIInsights(dateRange?: DateRangeDto) {
+    let currentStart: Date;
+    let currentEnd: Date;
+    let prevStart: Date;
+    let prevEnd: Date;
+    let periodLabel = 'Last 7 Days (vs Prior 7 Days)';
+
+    if (dateRange && (dateRange.startDate || dateRange.endDate)) {
+      currentEnd = dateRange.endDate ? new Date(dateRange.endDate) : new Date();
+      currentStart = dateRange.startDate ? new Date(dateRange.startDate) : new Date(currentEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const duration = currentEnd.getTime() - currentStart.getTime();
+      prevStart = new Date(currentStart.getTime() - duration);
+      prevEnd = currentStart;
+
+      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+      periodLabel = `${formatDate(currentStart)} to ${formatDate(currentEnd)} (vs ${formatDate(prevStart)} to ${formatDate(prevEnd)})`;
+    } else {
+      const now = new Date();
+      currentEnd = now;
+      currentStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      prevStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      prevEnd = currentStart;
+    }
+
+    console.log('[Reports Service - AI Insights] Date Calculations:', {
+      currentStart: currentStart.toISOString(),
+      currentEnd: currentEnd.toISOString(),
+      prevStart: prevStart.toISOString(),
+      prevEnd: prevEnd.toISOString(),
+      periodLabel
+    });
 
     // Current period completed orders
     const currentOrders = await this.prisma.order.findMany({
       where: {
-        createdAt: { gte: currentStart, lte: now },
+        createdAt: { gte: currentStart, lte: currentEnd },
         status: 'COMPLETED',
       },
       include: {
@@ -179,13 +207,18 @@ export class ReportsService {
     // Previous period completed orders
     const prevOrders = await this.prisma.order.findMany({
       where: {
-        createdAt: { gte: prevStart, lt: currentStart },
+        createdAt: { gte: prevStart, lt: prevEnd },
         status: 'COMPLETED',
       },
       include: {
         items: { include: { product: true } },
         payment: true,
       },
+    });
+
+    console.log('[Reports Service - AI Insights] Orders Fetched:', {
+      currentOrdersCount: currentOrders.length,
+      prevOrdersCount: prevOrders.length
     });
 
     const currentRevenue = currentOrders.reduce(
@@ -320,7 +353,10 @@ export class ReportsService {
       topTables,
       peakHours,
       productDrops,
+      period: periodLabel,
     };
+
+    console.log('[Reports Service - AI Insights] Payload being sent to AI Service:', JSON.stringify(dataSummary, null, 2));
 
     const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
     try {
@@ -341,7 +377,7 @@ export class ReportsService {
     }
 
     const localInsights = [
-      `Revenue is $${currentRevenue.toFixed(2)} this week (${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}% compared to last week).`,
+      `Revenue is $${currentRevenue.toFixed(2)} this period (${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}% compared to the prior period).`,
       topProducts[0]
         ? `${topProducts[0].name} contributes $${topProducts[0].revenue.toFixed(2)} to total sales.`
         : 'No top product recorded.',
@@ -355,7 +391,7 @@ export class ReportsService {
         ? `Sales peak between ${peakHours[0].hour % 12 || 12} ${peakHours[0].hour >= 12 ? 'PM' : 'AM'} and ${(peakHours[0].hour + 1) % 12 || 12} ${peakHours[0].hour + 1 >= 12 ? 'PM' : 'AM'}.`
         : '',
       productDrops[0]
-        ? `${productDrops[0].name} sales dropped ${productDrops[0].dropPercentage}% compared to last week.`
+        ? `${productDrops[0].name} sales dropped ${productDrops[0].dropPercentage}% compared to the prior period.`
         : '',
       `Consider running a promotion on ${categoryContributions[categoryContributions.length - 1]?.name || 'beverages'} to boost sales.`,
     ]

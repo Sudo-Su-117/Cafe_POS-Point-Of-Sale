@@ -28,6 +28,7 @@ class AnalyzeRequest(BaseModel):
     topTables: List[Dict[str, Any]]
     peakHours: List[Dict[str, Any]]
     productDrops: List[Dict[str, Any]]
+    period: Optional[str] = "Last 7 Days (vs Prior 7 Days)"
 
 @app.post("/analyze")
 async def analyze_cafe(req: AnalyzeRequest):
@@ -38,10 +39,23 @@ async def analyze_cafe(req: AnalyzeRequest):
     peak_hours_str = "\n".join([f"  * {(h.get('hour') or 0)}:00 - {(h.get('hour') or 0)+1}:00 ({h.get('count', 0) or 0} orders)" for h in req.peakHours])
     drops_str = "\n".join([f"  * {d.get('name')}: -{d.get('dropPercentage', 0.0) or 0.0}% drop (from {d.get('prevQty', 0) or 0} to {d.get('currQty', 0) or 0})" for d in req.productDrops])
 
+    # Add diagnostic logging
+    print("="*60)
+    print(f"[AI Service] Incoming POST /analyze request:")
+    print(f"  * Period: {req.period}")
+    print(f"  * Current Revenue: ${req.currentRevenue:.2f}")
+    print(f"  * Prev Revenue: ${req.prevRevenue:.2f}")
+    print(f"  * Growth: {req.revenueGrowth:.1f}%")
+    print(f"  * Top Products Count: {len(req.topProducts)}")
+    print(f"  * Category Contributions Count: {len(req.categoryContributions)}")
+    print(f"  * Top Tables Count: {len(req.topTables)}")
+    print(f"  * Peak Hours Count: {len(req.peakHours)}")
+    print(f"  * Drops Count: {len(req.productDrops)}")
+    
     prompt = f"""Analyze the following sales performance data for "Cafe POS" and provide 5-6 concise, actionable, bulleted insights and recommendations for the cafe owner.
 
 Data Summary:
-- Period: Last 7 Days (vs Prior 7 Days)
+- Period: {req.period}
 - Current Week Revenue: ${req.currentRevenue:.2f} ({"+" if req.revenueGrowth >= 0 else ""}{req.revenueGrowth:.1f}% growth)
 - Top Products:
 {top_products_str}
@@ -59,6 +73,10 @@ Formatting Constraints:
 - Do not add any greeting, intro, or concluding remarks.
 - Provide direct insights first (e.g. "Revenue increased X%", "Y contributes Z% of sales").
 - Conclude with a solid recommendation based on the data."""
+
+    print("\n[AI Service] Generated prompt for LLM:")
+    print(prompt)
+    print("="*60)
 
     local_llm_url = os.getenv("LOCAL_LLM_URL")
     local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
@@ -82,8 +100,13 @@ Formatting Constraints:
                     res_json = response.json()
                     text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
                     if text:
-                        insights = [line.strip() for line in text.split("\n") if line.strip().startswith(("*", "-", "1", "2", "3", "4", "5", "6"))]
-                        return {"source": f"local-llm ({local_llm_model})", "insights": insights}
+                        insights = [
+                            line.strip() 
+                            for line in text.split("\n") 
+                            if line.strip().startswith(("*", "-", "•", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                        ]
+                        if insights:
+                            return {"source": f"local-llm ({local_llm_model})", "insights": insights}
         except Exception as e:
             print(f"Local LLM (LM Studio) API error: {e}")
 
@@ -100,8 +123,13 @@ Formatting Constraints:
                     res_json = response.json()
                     text = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                     if text:
-                        insights = [line.strip() for line in text.split("\n") if line.strip().startswith(("*", "-", "1", "2", "3", "4", "5", "6"))]
-                        return {"source": "gemini", "insights": insights}
+                        insights = [
+                            line.strip() 
+                            for line in text.split("\n") 
+                            if line.strip().startswith(("*", "-", "•", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                        ]
+                        if insights:
+                            return {"source": "gemini", "insights": insights}
         except Exception as e:
             print(f"Gemini API error: {e}")
 
@@ -124,8 +152,13 @@ Formatting Constraints:
                     res_json = response.json()
                     text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
                     if text:
-                        insights = [line.strip() for line in text.split("\n") if line.strip().startswith(("*", "-", "1", "2", "3", "4", "5", "6"))]
-                        return {"source": "openai", "insights": insights}
+                        insights = [
+                            line.strip() 
+                            for line in text.split("\n") 
+                            if line.strip().startswith(("*", "-", "•", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                        ]
+                        if insights:
+                            return {"source": "openai", "insights": insights}
         except Exception as e:
             print(f"OpenAI API error: {e}")
 

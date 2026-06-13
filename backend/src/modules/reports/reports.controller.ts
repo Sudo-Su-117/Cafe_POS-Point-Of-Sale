@@ -37,7 +37,7 @@ export class ReportsController {
 
   @Get('ai-insights')
   @ApiOperation({ summary: 'Get AI sales insights and business recommendations' })
-  async getAIInsights() {
-    return this.reportsService.getAIInsights();
+  async getAIInsights(@Query() dateRange: DateRangeDto) {
+    return this.reportsService.getAIInsights(dateRange);
   }
 }
