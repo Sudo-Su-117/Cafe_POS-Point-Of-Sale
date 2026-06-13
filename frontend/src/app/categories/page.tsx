@@ -1,0 +1,278 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { Plus, Search, Tag, Package, TrendingUp, Layers } from "lucide-react";
+import { Category } from "@/features/categories/components/types";
+import { CategoryCard } from "@/features/categories/components/CategoryCard";
+import { CategoryModal } from "@/features/categories/components/CategoryModal";
+import { DeleteConfirmModal } from "@/features/categories/components/DeleteConfirmModal";
+import { CategoryDetailDrawer } from "@/features/categories/components/CategoryDetailDrawer";
+
+// ─── Seed data ────────────────────────────────────────────────────────────────
+const SEED_CATEGORIES: Category[] = [
+  { id: "1", name: "Espresso",   color: "#C9783A", productCount: 8,  revenue: "$2,958", createdAt: "Jan 12, 2026" },
+  { id: "2", name: "Cold Brew",  color: "#5B8FA8", productCount: 5,  revenue: "$1,690", createdAt: "Jan 14, 2026" },
+  { id: "3", name: "Pastries",   color: "#D6A144", productCount: 11, revenue: "$1,521", createdAt: "Jan 15, 2026" },
+  { id: "4", name: "Sandwiches", color: "#789658", productCount: 7,  revenue: "$1,268", createdAt: "Feb 2, 2026"  },
+  { id: "5", name: "Tea",        color: "#9B6A9B", productCount: 6,  revenue: "$1,014", createdAt: "Feb 10, 2026" },
+  { id: "6", name: "Drinks",     color: "#4A7C8A", productCount: 9,  revenue: "$876",   createdAt: "Mar 1, 2026"  },
+  { id: "7", name: "Snacks",     color: "#D55C4C", productCount: 4,  revenue: "$543",   createdAt: "Mar 18, 2026" },
+  { id: "8", name: "Seasonal",   color: "#866443", productCount: 3,  revenue: "$321",   createdAt: "Apr 5, 2026"  },
+];
+
+type SortKey = "name" | "products" | "revenue";
+
+let idCounter = SEED_CATEGORIES.length + 1;
+const newId = () => String(idCounter++);
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function CategoriesPage() {
+  const [categories, setCategories]   = useState<Category[]>(SEED_CATEGORIES);
+  const [search, setSearch]           = useState("");
+  const [sort, setSort]               = useState<SortKey>("name");
+  const [modal, setModal]             = useState<"add" | "edit" | null>(null);
+  const [editTarget, setEditTarget]   = useState<Category | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [viewTarget, setViewTarget]   = useState<Category | null>(null);
+  const [toast, setToast]             = useState<string | null>(null);
+
+  // ── helpers ─────────────────────────────────────────────────────────────────
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2800);
+  };
+
+  const openAdd  = () => { setEditTarget(null); setModal("add"); };
+  const openEdit = (cat: Category) => { setEditTarget(cat); setModal("edit"); setViewTarget(null); };
+  const closeModal = () => { setModal(null); setEditTarget(null); };
+
+  const handleSave = (data: { name: string; color: string }) => {
+    if (modal === "add") {
+      const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      setCategories(prev => [...prev, { id: newId(), ...data, productCount: 0, revenue: "$0", createdAt: today }]);
+      showToast(`"${data.name}" category created`);
+    } else if (modal === "edit" && editTarget) {
+      setCategories(prev => prev.map(c => c.id === editTarget.id ? { ...c, ...data } : c));
+      showToast(`"${data.name}" updated`);
+    }
+    closeModal();
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    setCategories(prev => prev.filter(c => c.id !== deleteTarget.id));
+    showToast(`"${deleteTarget.name}" deleted`);
+    setDeleteTarget(null);
+  };
+
+  // ── derived data ─────────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let list = categories.filter(c =>
+      c.name.toLowerCase().includes(search.toLowerCase())
+    );
+    if (sort === "name")     list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "products") list = [...list].sort((a, b) => b.productCount - a.productCount);
+    if (sort === "revenue")  list = [...list].sort((a, b) => {
+      const n = (s: string) => parseFloat(s.replace(/[$,k]/g, "")) * (s.includes("k") ? 1000 : 1);
+      return n(b.revenue) - n(a.revenue);
+    });
+    return list;
+  }, [categories, search, sort]);
+
+  const totalProducts = categories.reduce((s, c) => s + c.productCount, 0);
+
+  const stats = [
+    { label: "Total Categories", value: String(categories.length), icon: Tag,       theme: "orange" as const },
+    { label: "Total Products",   value: String(totalProducts),     icon: Package,   theme: "brown"  as const },
+    { label: "Top Category",     value: [...categories].sort((a,b)=>b.productCount-a.productCount)[0]?.name ?? "—",
+                                                                    icon: TrendingUp,theme: "gold"   as const },
+    { label: "Avg Products",     value: categories.length ? String(Math.round(totalProducts / categories.length)) : "0",
+                                                                    icon: Layers,    theme: "green"  as const },
+  ];
+
+  const iconThemeMap = {
+    orange: { bg: "bg-[#FBECE1]", text: "text-[#CB7637]" },
+    brown:  { bg: "bg-[#F1ECE6]", text: "text-[#866443]" },
+    gold:   { bg: "bg-[#FAF2E1]", text: "text-[#D6A144]" },
+    green:  { bg: "bg-[#ECF1E7]", text: "text-[#78964E]" },
+  };
+
+  // ── render ───────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col gap-6 md:gap-8 max-w-[1600px] mx-auto">
+
+      {/* ── Top bar ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[13px] text-text-muted">
+            {categories.length} categories · colors appear everywhere in the POS
+          </p>
+        </div>
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-2 bg-[#CB7637] hover:bg-[#B86830] text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-all hover:-translate-y-0.5 shadow-sm active:scale-[0.97]"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          New Category
+        </button>
+      </div>
+
+      {/* ── Stat cards ── */}
+      <section className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {stats.map(s => {
+          const theme = iconThemeMap[s.theme];
+          const Icon  = s.icon;
+          return (
+            <div
+              key={s.label}
+              className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[18px] p-4 flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            >
+              <div className={`w-[48px] h-[48px] rounded-[14px] flex items-center justify-center shrink-0 ${theme.bg} ${theme.text}`}>
+                <Icon size={20} strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">{s.label}</p>
+                <p className="text-[22px] font-bold text-text-heading leading-none mt-0.5">{s.value}</p>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* ── Search + Sort bar ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-[340px]">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search categories…"
+            className="w-full bg-[#F7F3ED] border border-[#D8CCBF] rounded-[12px] pl-9 pr-4 py-2.5 text-[14px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-[#CB7637] transition-colors"
+          />
+        </div>
+
+        {/* Sort */}
+        <div className="flex bg-[#F1ECE5] rounded-[13px] p-1 gap-1 ml-auto">
+          {(["name", "products", "revenue"] as SortKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setSort(key)}
+              className={`px-3.5 py-1.5 rounded-[10px] text-[13px] font-semibold transition-all capitalize ${
+                sort === key
+                  ? "bg-white text-[#CB7637] shadow-sm"
+                  : "text-text-muted hover:text-text-body"
+              }`}
+            >
+              {key === "products" ? "Products ↓" : key === "revenue" ? "Revenue ↓" : "A → Z"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Category cards grid ── */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
+          <div className="w-16 h-16 rounded-[20px] bg-[#F1ECE5] flex items-center justify-center">
+            <Tag size={28} className="text-[#D8CCBF]" />
+          </div>
+          <p className="text-[15px] font-bold text-text-heading">
+            {search ? "No categories match your search" : "No categories yet"}
+          </p>
+          <p className="text-[13px]">
+            {search ? "Try a different name" : "Click \u201cNew Category\u201d to get started"}
+          </p>
+          {!search && (
+            <button
+              onClick={openAdd}
+              className="mt-2 flex items-center gap-2 bg-[#CB7637] hover:bg-[#B86830] text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-colors"
+            >
+              <Plus size={15} /> New Category
+            </button>
+          )}
+        </div>
+      ) : (
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {/* Add-new shortcut card */}
+          <button
+            onClick={openAdd}
+            className="bg-[#F7F3ED] border-2 border-dashed border-[#D8CCBF] rounded-[20px] flex flex-col items-center justify-center gap-3 min-h-[220px] hover:border-[#CB7637] hover:bg-[#FAEEE0] transition-all duration-200 group"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#F1ECE5] group-hover:bg-[#FBECE1] flex items-center justify-center transition-colors">
+              <Plus size={22} className="text-text-muted group-hover:text-[#CB7637] transition-colors" />
+            </div>
+            <span className="text-[14px] font-bold text-text-muted group-hover:text-[#CB7637] transition-colors">
+              Add Category
+            </span>
+          </button>
+
+          {filtered.map(cat => (
+            <CategoryCard
+              key={cat.id}
+              category={cat}
+              onView={setViewTarget}
+              onEdit={openEdit}
+              onDelete={id => {
+                const found = categories.find(c => c.id === id);
+                if (found) setDeleteTarget(found);
+              }}
+            />
+          ))}
+        </section>
+      )}
+
+      {/* ── Color legend strip ── */}
+      {categories.length > 0 && (
+        <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[18px] px-5 py-4">
+          <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider mb-3">
+            All Category Colors
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(c => (
+              <div key={c.id} className="flex items-center gap-2 bg-[#F1ECE5] rounded-full px-3 py-1.5">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                <span className="text-[12px] font-semibold text-text-body">{c.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modals ── */}
+      {(modal === "add" || modal === "edit") && (
+        <CategoryModal
+          mode={modal}
+          initial={editTarget}
+          existingNames={categories.map(c => c.name)}
+          onSave={handleSave}
+          onClose={closeModal}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          categoryName={deleteTarget.name}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* ── Category detail drawer ── */}
+      {viewTarget && (
+        <CategoryDetailDrawer
+          category={viewTarget}
+          onClose={() => setViewTarget(null)}
+          onEdit={cat => { setViewTarget(null); openEdit(cat); }}
+        />
+      )}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2B1F16] text-white text-[13px] font-semibold px-5 py-3 rounded-full shadow-xl flex items-center gap-2 animate-fade-in">
+          <span className="text-[#CB7637]">✓</span> {toast}
+        </div>
+      )}
+    </div>
+  );
+}
