@@ -11,7 +11,7 @@ export class KdsService {
     return this.prisma.order.findMany({
       where: {
         status: {
-          in: ['CONFIRMED', 'PREPARING'],
+          in: ['SENT_TO_KITCHEN', 'PREPARING'],
         },
       },
       select: {
@@ -20,11 +20,11 @@ export class KdsService {
         customerId: true,
         tableId: true,
         createdAt: true,
-        items: {
+        orderItems: {
           select: {
             id: true,
             quantity: true,
-            unitPrice: true,
+            unitPriceSnapshot: true,
             product: {
               select: {
                 id: true,
@@ -50,11 +50,11 @@ export class KdsService {
         customerId: true,
         tableId: true,
         createdAt: true,
-        items: {
+        orderItems: {
           select: {
             id: true,
             quantity: true,
-            unitPrice: true,
+            unitPriceSnapshot: true,
             product: {
               select: {
                 id: true,
@@ -96,7 +96,7 @@ export class KdsService {
         status: true,
         customerId: true,
         tableId: true,
-        items: {
+        orderItems: {
           select: {
             id: true,
             quantity: true,
@@ -124,14 +124,14 @@ export class KdsService {
     return this.prisma.order.update({
       where: { id: orderId },
       data: {
-        status: 'READY' as any,
+        status: 'COMPLETED' as any,
       },
       select: {
         id: true,
         status: true,
         customerId: true,
         tableId: true,
-        items: {
+        orderItems: {
           select: {
             id: true,
             quantity: true,

@@ -67,7 +67,7 @@ async function main() {
   await prisma.payment.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
-  await prisma.table.deleteMany();
+  await prisma.restaurantTable.deleteMany();
   await prisma.floor.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.product.deleteMany();
@@ -107,45 +107,45 @@ async function main() {
 
   // Create Floors
   const floorG = await prisma.floor.create({
-    data: { name: 'Ground Floor', floorNumber: 0, description: 'Main dining hall and counter' },
+    data: { name: 'Ground Floor', sortOrder: 0 },
   });
   const floor1 = await prisma.floor.create({
-    data: { name: 'First Floor', floorNumber: 1, description: 'Cozy seating area and balcony' },
+    data: { name: 'First Floor', sortOrder: 1 },
   });
 
   // Create Tables
   const tables: any[] = [];
   const gTableConfigs = [
-    { name: 'Table 1', capacity: 2 },
-    { name: 'Table 2', capacity: 2 },
-    { name: 'Table 3', capacity: 4 },
-    { name: 'Table 4', capacity: 4 },
-    { name: 'Table 5', capacity: 6 },
-    { name: 'Table 6', capacity: 2 },
-    { name: 'Table 7', capacity: 4 },
-    { name: 'Table 8', capacity: 8 },
+    { name: 'T1', capacity: 2 },
+    { name: 'T2', capacity: 2 },
+    { name: 'T3', capacity: 4 },
+    { name: 'T4', capacity: 4 },
+    { name: 'T5', capacity: 6 },
+    { name: 'T6', capacity: 2 },
+    { name: 'T7', capacity: 4 },
+    { name: 'T8', capacity: 8 },
   ];
   const fTableConfigs = [
-    { name: 'Table 9', capacity: 2 },
-    { name: 'Table 10', capacity: 2 },
-    { name: 'Table 11', capacity: 4 },
-    { name: 'Table 12', capacity: 4 },
-    { name: 'Table 13', capacity: 6 },
-    { name: 'Table 14', capacity: 2 },
-    { name: 'Table 15', capacity: 4 },
-    { name: 'Table 16', capacity: 6 },
+    { name: 'T9', capacity: 2 },
+    { name: 'T10', capacity: 2 },
+    { name: 'T11', capacity: 4 },
+    { name: 'T12', capacity: 4 },
+    { name: 'T13', capacity: 6 },
+    { name: 'T14', capacity: 2 },
+    { name: 'T15', capacity: 4 },
+    { name: 'T16', capacity: 6 },
   ];
 
   for (const config of gTableConfigs) {
-    const t = await prisma.table.create({
-      data: { ...config, floorId: floorG.id, status: 'available' },
+    const t = await prisma.restaurantTable.create({
+      data: { tableNumber: config.name, seats: config.capacity, floorId: floorG.id, status: 'AVAILABLE' },
     });
     tables.push(t);
   }
 
   for (const config of fTableConfigs) {
-    const t = await prisma.table.create({
-      data: { ...config, floorId: floor1.id, status: 'available' },
+    const t = await prisma.restaurantTable.create({
+      data: { tableNumber: config.name, seats: config.capacity, floorId: floor1.id, status: 'AVAILABLE' },
     });
     tables.push(t);
   }
@@ -154,12 +154,12 @@ async function main() {
 
   // Create Categories
   const categoriesData = [
-    { name: 'Coffee', description: 'Hot and cold brewed coffee beverages' },
-    { name: 'Tea & Chai', description: 'Premium selection of hot teas and classic chai' },
-    { name: 'Bakery', description: 'Freshly baked croissants, muffins, and cookies' },
-    { name: 'Sandwiches & Wraps', description: 'Freshly prepared wraps and sandwiches' },
-    { name: 'Desserts', description: 'Sweet treats, pastries, and cakes' },
-    { name: 'Cold Beverages', description: 'Shakes, iced drinks, and juices' },
+    { name: 'Coffee' },
+    { name: 'Tea & Chai' },
+    { name: 'Bakery' },
+    { name: 'Sandwiches & Wraps' },
+    { name: 'Desserts' },
+    { name: 'Cold Beverages' },
   ];
 
   const categoriesMap: { [key: string]: string } = {};
@@ -216,6 +216,7 @@ async function main() {
         price: prod.price,
         description: prod.description,
         categoryId: categoriesMap[prod.categoryName],
+        taxRate: 5.00,
       },
     });
     products.push(p);
@@ -225,7 +226,13 @@ async function main() {
 
   const customers: any[] = [];
   for (const cust of CUSTOMERS_POOL) {
-    const c = await prisma.customer.create({ data: cust });
+    const c = await prisma.customer.create({ 
+      data: {
+        name: cust.name,
+        email: cust.email,
+        phoneNumber: cust.phone,
+      } 
+    });
     customers.push(c);
   }
 
@@ -286,11 +293,11 @@ async function main() {
 
     const session = await prisma.session.create({
       data: {
-        userId: employee.id,
-        description: `Daily Shift - ${currentDay.toISOString().split('T')[0]}`,
-        status: 'closed',
+        openedByUserId: employee.id,
+        status: 'CLOSED',
         createdAt: sessionStart,
         closedAt: sessionEnd,
+        openedAt: sessionStart,
       },
     });
 
@@ -329,12 +336,9 @@ async function main() {
         customerId = randomCustomer.id;
       }
 
-      // Determine order type: dine-in (75%) vs takeaway (25%)
-      let tableId: string | null = null;
-      if (Math.random() < 0.75) {
-        const randomTable = tables[Math.floor(Math.random() * tables.length)];
-        tableId = randomTable.id;
-      }
+      // Determine table
+      const randomTable = tables[Math.floor(Math.random() * tables.length)];
+      const tableId = randomTable.id;
 
       // Select products based on time of day
       let menuSubset = products;
@@ -363,31 +367,46 @@ async function main() {
 
       // Map out the order items data
       let subtotal = 0;
+      let taxTotal = 0;
       const orderItemsData = selectedProducts.map(p => {
         const qty = Math.random() < 0.15 ? 2 : 1; // 15% chance of quantity 2, else 1
         const price = p.price;
-        subtotal += price * qty;
+        const taxRate = 5.00;
+        const lineSubtotal = price * qty;
+        const lineTax = (lineSubtotal * taxRate) / 100;
+        const lineTotal = lineSubtotal + lineTax;
+
+        subtotal += lineSubtotal;
+        taxTotal += lineTax;
+
         return {
           productId: p.id,
+          productNameSnapshot: p.name,
+          unitPriceSnapshot: price,
+          taxRateSnapshot: taxRate,
           quantity: qty,
-          unitPrice: price,
-          createdAt: orderTime,
+          lineSubtotal,
+          lineTax,
+          lineDiscount: 0,
+          lineTotal,
         };
       });
 
       // Apply coupon or discount logic (15% chance of coupon application)
-      let finalAmount = subtotal;
+      let discountTotal = 0;
       let appliedCouponCode = '';
 
       if (!isCancelled && Math.random() < 0.15) {
         if (isWeekend && subtotal >= couponWeekend.minOrderAmount!) {
-          finalAmount = subtotal * (1 - couponWeekend.discountPercentage / 100);
+          discountTotal = subtotal * (couponWeekend.discountPercentage / 100);
           appliedCouponCode = couponWeekend.code;
         } else if (subtotal >= couponWelcome.minOrderAmount!) {
-          finalAmount = subtotal * (1 - couponWelcome.discountPercentage / 100);
+          discountTotal = subtotal * (couponWelcome.discountPercentage / 100);
           appliedCouponCode = couponWelcome.code;
         }
       }
+
+      const grandTotal = subtotal + taxTotal - discountTotal;
 
       // Create Order, OrderItems, and Payment inside nested transaction
       const paymentMethod = [
@@ -403,18 +422,25 @@ async function main() {
 
       await prisma.order.create({
         data: {
-          customerId,
+          orderNumber: `ORD-${currentDay.toISOString().split('T')[0].replace(/-/g, '')}-${orderCounter}`,
+          sessionId: session.id,
           tableId,
+          customerId: customerId || undefined,
+          createdByUserId: employee.id,
           status,
+          subtotal,
+          taxTotal,
+          discountTotal,
+          grandTotal,
           notes: appliedCouponCode ? `Applied coupon ${appliedCouponCode}` : null,
           createdAt: orderTime,
           updatedAt: orderTime,
-          items: {
+          orderItems: {
             create: orderItemsData,
           },
-          payment: {
+          payments: {
             create: {
-              amount: parseFloat(finalAmount.toFixed(2)),
+              amount: parseFloat(grandTotal.toFixed(2)),
               method: paymentMethod,
               status: paymentStatus,
               createdAt: orderTime,

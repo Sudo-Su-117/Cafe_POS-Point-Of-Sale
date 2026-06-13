@@ -401,14 +401,14 @@ export class ProductsService {
     const matchingOrders = await this.prisma.order.findMany({
       where: {
         status: 'COMPLETED',
-        items: {
+        orderItems: {
           some: {
             productId: { in: resolvedProductIds },
           },
         },
       },
       include: {
-        items: {
+        orderItems: {
           include: {
             product: true,
           },
@@ -419,7 +419,7 @@ export class ProductsService {
     // Compute co-occurrences of other products
     const coOccurrenceCounts: { [productId: string]: { name: string; price: number; count: number } } = {};
     for (const order of matchingOrders) {
-      for (const item of order.items) {
+      for (const item of order.orderItems) {
         if (!resolvedProductIds.includes(item.productId) && item.product.isActive) {
           if (!coOccurrenceCounts[item.productId]) {
             coOccurrenceCounts[item.productId] = {
