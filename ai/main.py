@@ -202,7 +202,7 @@ class PromotionProduct(BaseModel):
     id: str
     name: str
     price: float
-    stock: int
+    stock: Optional[int] = 0
     salesQty: int
     category: str
 

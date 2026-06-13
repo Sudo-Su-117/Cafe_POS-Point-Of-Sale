@@ -110,8 +110,7 @@ export class PromotionsService {
     const aiProductsPayload = products.map((p) => ({
       id: p.id,
       name: p.name,
-      price: p.price,
-      stock: p.stock,
+      price: Number(p.price),
       salesQty: salesMap.get(p.id) || 0,
       category: p.category?.name || 'Uncategorized',
     }));
