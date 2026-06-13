@@ -31,12 +31,12 @@ class AnalyzeRequest(BaseModel):
 
 @app.post("/analyze")
 async def analyze_cafe(req: AnalyzeRequest):
-    # Format prompt
-    top_products_str = "\n".join([f"  * {p.get('name')}: {p.get('qty')} sold, ${p.get('revenue'):.2f} revenue" for p in req.topProducts])
-    cat_contrib_str = "\n".join([f"  * {c.get('name')}: ${c.get('revenue'):.2f} ({c.get('percentage')}%)" for c in req.categoryContributions])
-    top_tables_str = "\n".join([f"  * {t.get('name')}: ${t.get('revenue'):.2f}" for t in req.topTables])
-    peak_hours_str = "\n".join([f"  * {h.get('hour')}:00 - {h.get('hour')+1}:00 ({h.get('count')} orders)" for h in req.peakHours])
-    drops_str = "\n".join([f"  * {d.get('name')}: -{d.get('dropPercentage')}% drop (from {d.get('prevQty')} to {d.get('currQty')})" for d in req.productDrops])
+    # Format prompt defensively against None values
+    top_products_str = "\n".join([f"  * {p.get('name')}: {p.get('qty', 0) or 0} sold, ${p.get('revenue', 0.0) or 0.0:.2f} revenue" for p in req.topProducts])
+    cat_contrib_str = "\n".join([f"  * {c.get('name')}: ${c.get('revenue', 0.0) or 0.0:.2f} ({c.get('percentage', 0.0) or 0.0}%)" for c in req.categoryContributions])
+    top_tables_str = "\n".join([f"  * {t.get('name')}: ${t.get('revenue', 0.0) or 0.0:.2f}" for t in req.topTables])
+    peak_hours_str = "\n".join([f"  * {(h.get('hour') or 0)}:00 - {(h.get('hour') or 0)+1}:00 ({h.get('count', 0) or 0} orders)" for h in req.peakHours])
+    drops_str = "\n".join([f"  * {d.get('name')}: -{d.get('dropPercentage', 0.0) or 0.0}% drop (from {d.get('prevQty', 0) or 0} to {d.get('currQty', 0) or 0})" for d in req.productDrops])
 
     prompt = f"""Analyze the following sales performance data for "Cafe POS" and provide 5-6 concise, actionable, bulleted insights and recommendations for the cafe owner.
 
@@ -134,12 +134,12 @@ Formatting Constraints:
     local_insights.append(f"- Revenue is ${req.currentRevenue:.2f} this week ({'+' if req.revenueGrowth >= 0 else ''}{req.revenueGrowth:.1f}% compared to last week).")
     
     if req.topProducts:
-        local_insights.append(f"- {req.topProducts[0].get('name')} contributes ${req.topProducts[0].get('revenue'):.2f} to total sales.")
+        local_insights.append(f"- {req.topProducts[0].get('name')} contributes ${req.topProducts[0].get('revenue', 0.0) or 0.0:.2f} to total sales.")
     else:
         local_insights.append("- No top product recorded.")
 
     if req.categoryContributions:
-        local_insights.append(f"- {req.categoryContributions[0].get('name')} contributes {req.categoryContributions[0].get('percentage')}% of total sales.")
+        local_insights.append(f"- {req.categoryContributions[0].get('name')} contributes {req.categoryContributions[0].get('percentage', 0.0) or 0.0}% of total sales.")
 
     if req.topTables:
         table_names = [t.get('name', '').replace('Table ', '') for t in req.topTables]
@@ -147,7 +147,7 @@ Formatting Constraints:
 
     if req.peakHours:
         ph = req.peakHours[0]
-        hour = ph.get('hour', 0)
+        hour = ph.get('hour') or 0
         start_ampm = "PM" if hour >= 12 else "AM"
         end_ampm = "PM" if hour + 1 >= 12 else "AM"
         start_hour = hour % 12 if hour % 12 != 0 else 12
@@ -156,7 +156,7 @@ Formatting Constraints:
 
     if req.productDrops:
         drop = req.productDrops[0]
-        local_insights.append(f"- {drop.get('name')} sales dropped {drop.get('dropPercentage')}% compared to last week.")
+        local_insights.append(f"- {drop.get('name')} sales dropped {drop.get('dropPercentage', 0.0) or 0.0}% compared to last week.")
 
     recommend_cat = req.categoryContributions[-1].get('name') if req.categoryContributions else "beverages"
     local_insights.append(f"- Consider running a promotion on {recommend_cat} to boost sales.")
