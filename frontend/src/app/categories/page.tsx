@@ -10,14 +10,14 @@ import { CategoryDetailDrawer } from "@/features/categories/components/CategoryD
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 const SEED_CATEGORIES: Category[] = [
-  { id: "1", name: "Espresso",   color: "#C9783A", productCount: 8,  revenue: "$2,958", createdAt: "Jan 12, 2026" },
-  { id: "2", name: "Cold Brew",  color: "#5B8FA8", productCount: 5,  revenue: "$1,690", createdAt: "Jan 14, 2026" },
-  { id: "3", name: "Pastries",   color: "#D6A144", productCount: 11, revenue: "$1,521", createdAt: "Jan 15, 2026" },
-  { id: "4", name: "Sandwiches", color: "#789658", productCount: 7,  revenue: "$1,268", createdAt: "Feb 2, 2026"  },
-  { id: "5", name: "Tea",        color: "#9B6A9B", productCount: 6,  revenue: "$1,014", createdAt: "Feb 10, 2026" },
-  { id: "6", name: "Drinks",     color: "#4A7C8A", productCount: 9,  revenue: "$876",   createdAt: "Mar 1, 2026"  },
-  { id: "7", name: "Snacks",     color: "#D55C4C", productCount: 4,  revenue: "$543",   createdAt: "Mar 18, 2026" },
-  { id: "8", name: "Seasonal",   color: "#866443", productCount: 3,  revenue: "$321",   createdAt: "Apr 5, 2026"  },
+  { id: "1", name: "Espresso",   color: "#C9783A", image: null, productCount: 8,  revenue: "$2,958", createdAt: "Jan 12, 2026" },
+  { id: "2", name: "Cold Brew",  color: "#5B8FA8", image: null, productCount: 5,  revenue: "$1,690", createdAt: "Jan 14, 2026" },
+  { id: "3", name: "Pastries",   color: "#D6A144", image: null, productCount: 11, revenue: "$1,521", createdAt: "Jan 15, 2026" },
+  { id: "4", name: "Sandwiches", color: "#789658", image: null, productCount: 7,  revenue: "$1,268", createdAt: "Feb 2, 2026"  },
+  { id: "5", name: "Tea",        color: "#9B6A9B", image: null, productCount: 6,  revenue: "$1,014", createdAt: "Feb 10, 2026" },
+  { id: "6", name: "Drinks",     color: "#4A7C8A", image: null, productCount: 9,  revenue: "$876",   createdAt: "Mar 1, 2026"  },
+  { id: "7", name: "Snacks",     color: "#D55C4C", image: null, productCount: 4,  revenue: "$543",   createdAt: "Mar 18, 2026" },
+  { id: "8", name: "Seasonal",   color: "#866443", image: null, productCount: 3,  revenue: "$321",   createdAt: "Apr 5, 2026"  },
 ];
 
 type SortKey = "name" | "products" | "revenue";
@@ -46,7 +46,7 @@ export default function CategoriesPage() {
   const openEdit = (cat: Category) => { setEditTarget(cat); setModal("edit"); setViewTarget(null); };
   const closeModal = () => { setModal(null); setEditTarget(null); };
 
-  const handleSave = (data: { name: string; color: string }) => {
+  const handleSave = (data: { name: string; color: string; image: string | null }) => {
     if (modal === "add") {
       const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       setCategories(prev => [...prev, { id: newId(), ...data, productCount: 0, revenue: "$0", createdAt: today }]);

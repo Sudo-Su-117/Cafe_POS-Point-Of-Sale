@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { MoreVertical, Pencil, Trash2, Package } from "lucide-react";
+import Image from "next/image";
 import { Category } from "./types";
 
 interface CategoryCardProps {
@@ -19,8 +20,18 @@ export function CategoryCard({ category, onEdit, onDelete, onView }: CategoryCar
       onClick={() => !menuOpen && onView(category)}
       className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[20px] overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-[#CB7637] transition-all duration-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] group relative cursor-pointer"
     >
-      {/* Color band top */}
-      <div className="h-[8px] w-full" style={{ backgroundColor: category.color }} />
+      {/* Image or color band */}
+      {category.image ? (
+        <div className="relative h-[100px] w-full overflow-hidden">
+          <Image src={category.image} alt={category.name} fill className="object-cover" unoptimized />
+          {/* Gradient overlay so badge stays readable */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          {/* Color accent bar at bottom of image */}
+          <div className="absolute bottom-0 left-0 right-0 h-[4px]" style={{ backgroundColor: category.color }} />
+        </div>
+      ) : (
+        <div className="h-[8px] w-full" style={{ backgroundColor: category.color }} />
+      )}
 
       <div className="p-5">
         {/* Row 1: Badge + menu */}
