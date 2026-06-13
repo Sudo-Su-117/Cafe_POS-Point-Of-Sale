@@ -4,7 +4,7 @@ import React from "react";
 import { Product } from "@/lib/product-types";
 import { CategoryBadge } from "./CategoryBadge";
 import { StatusToggle } from "./StatusToggle";
-import { Pencil, Trash2 } from "lucide-react";
+import { ProductActions } from "./ProductActions";
 
 interface ProductTableProps {
   products: Product[];
@@ -95,24 +95,11 @@ export function ProductTable({
                 
                 {/* Action Buttons (Edit & Delete circles) */}
                 <td className="px-6 py-2 text-right">
-                  <div className="flex items-center justify-end gap-2.5">
-                    {/* Edit button circle */}
-                    <button
-                      onClick={() => onEdit(product)}
-                      className="w-[30px] h-[30px] rounded-full bg-[#F3ECE3] text-[#9A846F] hover:brightness-[0.97] transition-all flex items-center justify-center cursor-pointer select-none"
-                      title="Edit Product"
-                    >
-                      <Pencil size={14} strokeWidth={2} />
-                    </button>
-
-                    {/* Delete button circle */}
-                    <button
-                      onClick={() => onDelete(product.id)}
-                      className="w-[30px] h-[30px] rounded-full bg-[#FBE7E3] text-[#D96052] hover:brightness-[0.97] transition-all flex items-center justify-center cursor-pointer select-none"
-                      title="Delete Product"
-                    >
-                      <Trash2 size={14} strokeWidth={2} />
-                    </button>
+                  <div className="flex items-center justify-end">
+                    <ProductActions
+                      onEdit={() => onEdit(product)}
+                      onDelete={() => onDelete(product.id)}
+                    />
                   </div>
                 </td>
               </tr>

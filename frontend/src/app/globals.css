@@ -7,8 +7,10 @@
   --primary: #C9783A;
   --sidebar: #866443;
   --success: #789658;
+  --danger: #D95A4C;
   --gold: #D6A144;
   --card: #F7F3ED;
+  --surface: #FFFFFF;
   --border-color: #D8CCBF;
   
   --text-heading: #2B1F16;
@@ -22,8 +24,10 @@
   --color-primary: var(--primary);
   --color-sidebar-bg: var(--sidebar);
   --color-success: var(--success);
+  --color-danger: var(--danger);
   --color-gold: var(--gold);
   --color-card-bg: var(--card);
+  --color-surface: var(--surface);
   --color-border-custom: var(--border-color);
   
   --color-text-heading: var(--text-heading);
@@ -46,6 +50,10 @@
   --spacing-space-6: 24px;
   --spacing-space-8: 32px;
   --spacing-space-10: 40px;
+
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
 
 body {

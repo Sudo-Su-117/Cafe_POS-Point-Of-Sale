@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product } from "@/lib/product-types";
+import { Product, ProductFormData } from "@/lib/product-types";
 import { X } from "lucide-react";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: Omit<Product, "id"> & { id?: string }) => void;
+  onSave: (product: ProductFormData) => void;
   product?: Product | null; // If editing, we pass the product details
 }
 
