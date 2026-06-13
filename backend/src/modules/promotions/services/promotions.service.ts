@@ -47,12 +47,17 @@ export class PromotionsService {
 
     const dataToUpdate: any = {};
     if (updatePromotionDto.name) dataToUpdate.name = updatePromotionDto.name;
-    if (updatePromotionDto.description) dataToUpdate.description = updatePromotionDto.description;
+    if (updatePromotionDto.description)
+      dataToUpdate.description = updatePromotionDto.description;
     if (updatePromotionDto.type) dataToUpdate.type = updatePromotionDto.type;
-    if (updatePromotionDto.value !== undefined) dataToUpdate.value = updatePromotionDto.value;
-    if (updatePromotionDto.startDate) dataToUpdate.startDate = updatePromotionDto.startDate;
-    if (updatePromotionDto.endDate) dataToUpdate.endDate = updatePromotionDto.endDate;
-    if (updatePromotionDto.isActive !== undefined) dataToUpdate.isActive = updatePromotionDto.isActive;
+    if (updatePromotionDto.value !== undefined)
+      dataToUpdate.value = updatePromotionDto.value;
+    if (updatePromotionDto.startDate)
+      dataToUpdate.startDate = updatePromotionDto.startDate;
+    if (updatePromotionDto.endDate)
+      dataToUpdate.endDate = updatePromotionDto.endDate;
+    if (updatePromotionDto.isActive !== undefined)
+      dataToUpdate.isActive = updatePromotionDto.isActive;
 
     return this.prisma.promotion.update({
       where: { id },

@@ -15,11 +15,16 @@ import { UsersModule } from '../users/users.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'hackathon-secret-key-change-in-production',
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'hackathon-secret-key-change-in-production',
         signOptions: {
-          expiresIn: parseInt(String(configService.get<string>('JWT_EXPIRES_IN') || '604800'), 10),
+          expiresIn: parseInt(
+            String(configService.get<string>('JWT_EXPIRES_IN') || '604800'),
+            10,
+          ),
         },
-      } as any),
+      }),
     }),
     UsersModule,
   ],

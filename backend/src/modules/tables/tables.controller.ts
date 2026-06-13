@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { TablesService } from './services/tables.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
@@ -32,7 +41,10 @@ export class TablesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update table' })
-  async update(@Param('id') id: string, @Body() updateTableDto: UpdateTableDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateTableDto: UpdateTableDto,
+  ) {
     return this.tablesService.update(id, updateTableDto);
   }
 

@@ -102,7 +102,8 @@ export const AUTH_API_ENDPOINTS = {
         description: 'Email already registered',
         example: {
           statusCode: 409,
-          message: 'Email already registered. Please use a different email or try logging in.',
+          message:
+            'Email already registered. Please use a different email or try logging in.',
           error: 'Conflict',
         },
       },
@@ -324,7 +325,10 @@ export const JWT_INFO = {
 export const ERROR_CODES = {
   200: { status: 'OK', description: 'Successful request' },
   201: { status: 'Created', description: 'Resource created successfully' },
-  400: { status: 'Bad Request', description: 'Validation error or invalid input' },
+  400: {
+    status: 'Bad Request',
+    description: 'Validation error or invalid input',
+  },
   401: { status: 'Unauthorized', description: 'Missing or invalid JWT token' },
   403: { status: 'Forbidden', description: 'User account archived' },
   404: { status: 'Not Found', description: 'Resource not found' },

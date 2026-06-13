@@ -53,7 +53,7 @@ export class OrdersService {
         tableId,
         status: 'PENDING',
         items: {
-          create: items.map(item => ({
+          create: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice || 0,

@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsNumber, IsEnum, IsDate, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsDate,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { PromotionType } from '../../../common/enums';

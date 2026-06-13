@@ -35,7 +35,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
 
   handleRequest(err: any, user: any, info: any) {
     if (err || !user) {
-      this.logger.warn(`Authentication failed: ${info?.message || err?.message}`);
+      this.logger.warn(
+        `Authentication failed: ${info?.message || err?.message}`,
+      );
       throw err || new UnauthorizedException('Unauthorized');
     }
 

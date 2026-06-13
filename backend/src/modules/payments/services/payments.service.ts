@@ -42,7 +42,8 @@ export class PaymentsService {
 
     const dataToUpdate: any = {};
     if (updatePaymentDto.status) dataToUpdate.status = updatePaymentDto.status;
-    if (updatePaymentDto.amount !== undefined) dataToUpdate.amount = updatePaymentDto.amount;
+    if (updatePaymentDto.amount !== undefined)
+      dataToUpdate.amount = updatePaymentDto.amount;
 
     return this.prisma.payment.update({
       where: { id },

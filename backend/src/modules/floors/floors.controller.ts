@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { FloorsService } from './services/floors.service';
 import { CreateFloorDto } from './dto/create-floor.dto';
 import { UpdateFloorDto } from './dto/update-floor.dto';
@@ -32,7 +41,10 @@ export class FloorsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update floor' })
-  async update(@Param('id') id: string, @Body() updateFloorDto: UpdateFloorDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateFloorDto: UpdateFloorDto,
+  ) {
     return this.floorsService.update(id, updateFloorDto);
   }
 

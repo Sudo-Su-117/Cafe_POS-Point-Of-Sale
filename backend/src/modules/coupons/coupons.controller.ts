@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { CouponsService } from './services/coupons.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
@@ -32,7 +41,10 @@ export class CouponsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update coupon' })
-  async update(@Param('id') id: string, @Body() updateCouponDto: UpdateCouponDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateCouponDto: UpdateCouponDto,
+  ) {
     return this.couponsService.update(id, updateCouponDto);
   }
 

@@ -21,7 +21,10 @@ export class ReportsService {
 
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, order) => {
-      const orderTotal = order.items.reduce((itemSum, item) => itemSum + item.unitPrice * item.quantity, 0);
+      const orderTotal = order.items.reduce(
+        (itemSum, item) => itemSum + item.unitPrice * item.quantity,
+        0,
+      );
       return sum + orderTotal;
     }, 0);
 
@@ -134,8 +137,12 @@ export class ReportsService {
   }
 
   private _parseDateRange(dateRange: DateRangeDto) {
-    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : this._getStartOfDay(new Date());
-    const endDate = dateRange.endDate ? new Date(dateRange.endDate) : this._getEndOfDay(new Date());
+    const startDate = dateRange.startDate
+      ? new Date(dateRange.startDate)
+      : this._getStartOfDay(new Date());
+    const endDate = dateRange.endDate
+      ? new Date(dateRange.endDate)
+      : this._getEndOfDay(new Date());
 
     return { startDate, endDate };
   }

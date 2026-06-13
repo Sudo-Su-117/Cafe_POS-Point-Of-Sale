@@ -63,10 +63,14 @@ export class ProductsService {
 
     const dataToUpdate: any = {};
     if (updateProductDto.name) dataToUpdate.name = updateProductDto.name;
-    if (updateProductDto.description) dataToUpdate.description = updateProductDto.description;
-    if (updateProductDto.price !== undefined) dataToUpdate.price = updateProductDto.price;
-    if (updateProductDto.category) dataToUpdate.categoryId = updateProductDto.category;
-    if (updateProductDto.stock !== undefined) dataToUpdate.stock = updateProductDto.stock;
+    if (updateProductDto.description)
+      dataToUpdate.description = updateProductDto.description;
+    if (updateProductDto.price !== undefined)
+      dataToUpdate.price = updateProductDto.price;
+    if (updateProductDto.category)
+      dataToUpdate.categoryId = updateProductDto.category;
+    if (updateProductDto.stock !== undefined)
+      dataToUpdate.stock = updateProductDto.stock;
 
     return this.prisma.product.update({
       where: { id },

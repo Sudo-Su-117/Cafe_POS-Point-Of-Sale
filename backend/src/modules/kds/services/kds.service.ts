@@ -74,8 +74,13 @@ export class KdsService {
     return order;
   }
 
-  async updateOrderStatus(orderId: string, updateStatusDto: UpdateKdsStatusDto) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+  async updateOrderStatus(
+    orderId: string,
+    updateStatusDto: UpdateKdsStatusDto,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
 
     if (!order) {
       throw new ResourceNotFoundException('Order');
@@ -108,7 +113,9 @@ export class KdsService {
   }
 
   async markOrderReady(orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
 
     if (!order) {
       throw new ResourceNotFoundException('Order');

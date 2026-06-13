@@ -66,7 +66,8 @@ export class AuthController {
     schema: {
       example: {
         statusCode: 409,
-        message: 'Email already registered. Please use a different email or try logging in.',
+        message:
+          'Email already registered. Please use a different email or try logging in.',
         error: 'Conflict',
       },
     },
@@ -76,7 +77,10 @@ export class AuthController {
     schema: {
       example: {
         statusCode: 400,
-        message: ['Name must be at least 3 characters long', 'Email must be a valid email address'],
+        message: [
+          'Name must be at least 3 characters long',
+          'Email must be a valid email address',
+        ],
         error: 'Bad Request',
       },
     },
@@ -94,7 +98,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User Login',
-    description: 'Authenticate user with email and password. Returns JWT access token.',
+    description:
+      'Authenticate user with email and password. Returns JWT access token.',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -130,7 +135,10 @@ export class AuthController {
     schema: {
       example: {
         statusCode: 400,
-        message: ['Email must be a valid email address', 'Password is required'],
+        message: [
+          'Email must be a valid email address',
+          'Password is required',
+        ],
         error: 'Bad Request',
       },
     },
@@ -149,7 +157,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get Current User',
-    description: 'Retrieve the authenticated user profile information (requires valid JWT)',
+    description:
+      'Retrieve the authenticated user profile information (requires valid JWT)',
   })
   @ApiResponse({
     status: 200,

@@ -84,7 +84,7 @@ export class UsersService {
         email,
         passwordHash: hashedPassword,
         name,
-        role: role ? String(role) as 'ADMIN' | 'EMPLOYEE' : 'EMPLOYEE',
+        role: role ? (String(role) as 'ADMIN' | 'EMPLOYEE') : 'EMPLOYEE',
         status: 'ACTIVE',
       },
       select: {
