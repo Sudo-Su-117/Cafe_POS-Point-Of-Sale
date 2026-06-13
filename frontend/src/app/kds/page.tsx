@@ -52,10 +52,10 @@ const initialOrders: KDSOrder[] = [
 type FilterStage = "all" | KDSStage;
 
 const stageFilters: { key: FilterStage; label: string; color: string }[] = [
-  { key: "all",       label: "All",       color: "#866443" },
-  { key: "to-cook",   label: "To Cook",   color: "#D55C4C" },
-  { key: "preparing", label: "Preparing", color: "#D6A144" },
-  { key: "completed", label: "Completed", color: "#7C9C57" },
+  { key: "all",       label: "All",       color: "var(--sidebar)" },
+  { key: "to-cook",   label: "To Cook",   color: "var(--danger)" },
+  { key: "preparing", label: "Preparing", color: "var(--gold)" },
+  { key: "completed", label: "Completed", color: "var(--success)" },
 ];
 
 export default function KDSPage() {
@@ -105,7 +105,7 @@ export default function KDSPage() {
         </div>
         <button
           onClick={() => setOrders(initialOrders)}
-          className="flex items-center gap-2 bg-[#F1ECE5] hover:bg-[#E8DECE] border border-[#D8CCBF] text-text-muted hover:text-text-heading text-[13px] font-semibold px-4 py-2 rounded-[12px] transition-colors"
+          className="flex items-center gap-2 bg-surface hover:bg-border-custom/30 border border-border-custom text-text-muted hover:text-text-heading text-[13px] font-semibold px-4 py-2 rounded-[12px] transition-colors theme-transition"
         >
           <RefreshCw size={14} /> Refresh
         </button>
@@ -114,7 +114,7 @@ export default function KDSPage() {
       {/* Filters + Search */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Stage Filter */}
-        <div className="flex bg-[#F1ECE5] rounded-[14px] p-1 gap-1">
+        <div className="flex bg-surface rounded-[14px] p-1 gap-1 theme-transition">
           {stageFilters.map(f => (
             <button
               key={f.key}
@@ -125,7 +125,7 @@ export default function KDSPage() {
             >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
               {f.label}
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${filter === f.key ? "bg-[#F1ECE5] text-text-muted" : "bg-transparent"}`}>
+              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${filter === f.key ? "bg-surface text-text-muted" : "bg-transparent"}`}>
                 {counts[f.key]}
               </span>
             </button>
@@ -140,7 +140,7 @@ export default function KDSPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search order, table, item..."
-            className="w-full bg-[#F1ECE5] border border-[#D8CCBF] rounded-[12px] pl-9 pr-4 py-2 text-[13px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-[#CB7637] transition-colors"
+            className="w-full bg-surface border border-border-custom rounded-[12px] pl-9 pr-4 py-2 text-[13px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-primary transition-colors theme-transition"
           />
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function KDSPage() {
       {/* Columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {(["to-cook", "preparing", "completed"] as KDSStage[]).map(stage => {
-          const cfg = { "to-cook": { label: "To Cook", color: "#D55C4C" }, "preparing": { label: "Preparing", color: "#D6A144" }, "completed": { label: "Completed", color: "#7C9C57" } }[stage];
+          const cfg = { "to-cook": { label: "To Cook", color: "var(--danger)" }, "preparing": { label: "Preparing", color: "var(--gold)" }, "completed": { label: "Completed", color: "var(--success)" } }[stage];
           const stageOrders = filtered.filter(o => o.stage === stage);
 
           return (
@@ -157,13 +157,13 @@ export default function KDSPage() {
               <div className="flex items-center gap-2 px-1">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cfg.color }} />
                 <h3 className="text-[14px] font-bold text-text-heading">{cfg.label}</h3>
-                <span className="ml-auto text-[12px] font-bold px-2 py-0.5 rounded-full bg-[#F1ECE5] text-text-muted">{stageOrders.length}</span>
+                <span className="ml-auto text-[12px] font-bold px-2 py-0.5 rounded-full bg-surface text-text-muted theme-transition">{stageOrders.length}</span>
               </div>
 
               {/* Tickets */}
               <div className="flex flex-col gap-3">
                 {stageOrders.length === 0 ? (
-                  <div className="bg-[#F7F3ED] border border-dashed border-[#D8CCBF] rounded-[18px] flex flex-col items-center justify-center py-10 text-text-muted gap-2">
+                  <div className="bg-surface border border-dashed border-border-custom rounded-[18px] flex flex-col items-center justify-center py-10 text-text-muted gap-2 theme-transition">
                     <span className="text-2xl">🍳</span>
                     <span className="text-[13px] font-semibold">No orders here</span>
                   </div>

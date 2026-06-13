@@ -91,10 +91,10 @@ export default function CategoriesPage() {
   ];
 
   const iconThemeMap = {
-    orange: { bg: "bg-[#FBECE1]", text: "text-[#CB7637]" },
-    brown:  { bg: "bg-[#F1ECE6]", text: "text-[#866443]" },
-    gold:   { bg: "bg-[#FAF2E1]", text: "text-[#D6A144]" },
-    green:  { bg: "bg-[#ECF1E7]", text: "text-[#78964E]" },
+    orange: { bg: "bg-primary/10", text: "text-primary" },
+    brown:  { bg: "bg-sidebar-bg/10", text: "text-sidebar-bg" },
+    gold:   { bg: "bg-gold/10", text: "text-gold" },
+    green:  { bg: "bg-success/10", text: "text-success" },
   };
 
   // ── render ───────────────────────────────────────────────────────────────────
@@ -109,8 +109,9 @@ export default function CategoriesPage() {
           </p>
         </div>
         <button
+          type="button"
           onClick={openAdd}
-          className="flex items-center gap-2 bg-[#CB7637] hover:bg-[#B86830] text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-all hover:-translate-y-0.5 shadow-sm active:scale-[0.97]"
+          className="flex items-center gap-2 bg-primary hover:brightness-105 text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-all hover:-translate-y-0.5 shadow-sm active:scale-[0.97]"
         >
           <Plus size={16} strokeWidth={2.5} />
           New Category
@@ -125,7 +126,7 @@ export default function CategoriesPage() {
           return (
             <div
               key={s.label}
-              className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[18px] p-4 flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+              className="bg-surface border border-border-custom rounded-[18px] p-4 flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] theme-transition"
             >
               <div className={`w-[48px] h-[48px] rounded-[14px] flex items-center justify-center shrink-0 ${theme.bg} ${theme.text}`}>
                 <Icon size={20} strokeWidth={1.75} />
@@ -149,19 +150,20 @@ export default function CategoriesPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search categories…"
-            className="w-full bg-[#F7F3ED] border border-[#D8CCBF] rounded-[12px] pl-9 pr-4 py-2.5 text-[14px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-[#CB7637] transition-colors"
+            className="w-full bg-surface border border-border-custom rounded-[12px] pl-9 pr-4 py-2.5 text-[14px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-primary transition-colors theme-transition"
           />
         </div>
 
         {/* Sort */}
-        <div className="flex bg-[#F1ECE5] rounded-[13px] p-1 gap-1 ml-auto">
+        <div className="flex bg-surface rounded-[13px] p-1 gap-1 ml-auto theme-transition">
           {(["name", "products", "revenue"] as SortKey[]).map(key => (
             <button
+              type="button"
               key={key}
               onClick={() => setSort(key)}
               className={`px-3.5 py-1.5 rounded-[10px] text-[13px] font-semibold transition-all capitalize ${
                 sort === key
-                  ? "bg-white text-[#CB7637] shadow-sm"
+                  ? "bg-white text-primary shadow-sm"
                   : "text-text-muted hover:text-text-body"
               }`}
             >
@@ -174,8 +176,8 @@ export default function CategoriesPage() {
       {/* ── Category cards grid ── */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
-          <div className="w-16 h-16 rounded-[20px] bg-[#F1ECE5] flex items-center justify-center">
-            <Tag size={28} className="text-[#D8CCBF]" />
+          <div className="w-16 h-16 rounded-[20px] bg-surface flex items-center justify-center theme-transition">
+            <Tag size={28} className="text-border-custom" />
           </div>
           <p className="text-[15px] font-bold text-text-heading">
             {search ? "No categories match your search" : "No categories yet"}
@@ -185,8 +187,9 @@ export default function CategoriesPage() {
           </p>
           {!search && (
             <button
+              type="button"
               onClick={openAdd}
-              className="mt-2 flex items-center gap-2 bg-[#CB7637] hover:bg-[#B86830] text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-colors"
+              className="mt-2 flex items-center gap-2 bg-primary hover:brightness-105 text-white text-[14px] font-bold px-5 py-2.5 rounded-[14px] transition-colors"
             >
               <Plus size={15} /> New Category
             </button>
@@ -196,13 +199,14 @@ export default function CategoriesPage() {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* Add-new shortcut card */}
           <button
+            type="button"
             onClick={openAdd}
-            className="bg-[#F7F3ED] border-2 border-dashed border-[#D8CCBF] rounded-[20px] flex flex-col items-center justify-center gap-3 min-h-[220px] hover:border-[#CB7637] hover:bg-[#FAEEE0] transition-all duration-200 group"
+            className="bg-surface border-2 border-dashed border-border-custom rounded-[20px] flex flex-col items-center justify-center gap-3 min-h-[220px] hover:border-primary hover:bg-primary/10 transition-all duration-200 group theme-transition"
           >
-            <div className="w-12 h-12 rounded-full bg-[#F1ECE5] group-hover:bg-[#FBECE1] flex items-center justify-center transition-colors">
-              <Plus size={22} className="text-text-muted group-hover:text-[#CB7637] transition-colors" />
+            <div className="w-12 h-12 rounded-full bg-surface group-hover:bg-primary/10 flex items-center justify-center transition-colors theme-transition">
+              <Plus size={22} className="text-text-muted group-hover:text-primary transition-colors" />
             </div>
-            <span className="text-[14px] font-bold text-text-muted group-hover:text-[#CB7637] transition-colors">
+            <span className="text-[14px] font-bold text-text-muted group-hover:text-primary transition-colors">
               Add Category
             </span>
           </button>
@@ -224,13 +228,13 @@ export default function CategoriesPage() {
 
       {/* ── Color legend strip ── */}
       {categories.length > 0 && (
-        <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[18px] px-5 py-4">
+        <div className="bg-surface border border-border-custom rounded-[18px] px-5 py-4 theme-transition">
           <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider mb-3">
             All Category Colors
           </p>
           <div className="flex flex-wrap gap-2">
             {categories.map(c => (
-              <div key={c.id} className="flex items-center gap-2 bg-[#F1ECE5] rounded-full px-3 py-1.5">
+              <div key={c.id} className="flex items-center gap-2 bg-surface rounded-full px-3 py-1.5 theme-transition">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                 <span className="text-[12px] font-semibold text-text-body">{c.name}</span>
               </div>
@@ -269,8 +273,8 @@ export default function CategoriesPage() {
 
       {/* ── Toast ── */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2B1F16] text-white text-[13px] font-semibold px-5 py-3 rounded-full shadow-xl flex items-center gap-2 animate-fade-in">
-          <span className="text-[#CB7637]">✓</span> {toast}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-text-heading text-white text-[13px] font-semibold px-5 py-3 rounded-full shadow-xl flex items-center gap-2 animate-fade-in">
+          <span className="text-primary">✓</span> {toast}
         </div>
       )}
     </div>

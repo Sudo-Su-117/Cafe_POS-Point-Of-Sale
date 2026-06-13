@@ -1,19 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F4EFE8;
-  --foreground: #2B1F16;
-  
+  --background: #F4F0EA;
+  --foreground: #2C2118;
+
   --primary: #C9783A;
   --sidebar: #866443;
+  --surface: #F8F4EE;
   --success: #789658;
   --gold: #D6A144;
-  --card: #F7F3ED;
+  --warning: #D6A144;
+  --danger: #D95C4D;
+  --card: #F8F4EE;
   --border-color: #D8CCBF;
-  
-  --text-heading: #2B1F16;
-  --text-body: #6E5B4D;
+  --input: #FFFFFF;
+
+  --text-heading: #2C2118;
+  --text-body: #735F4F;
   --text-muted: #9A8B7D;
+
+  --sidebar-active-bg: #FAF6F0;
+  --sidebar-active-text: #2D2218;
+  --sidebar-active-icon: #CB7A39;
+}
+
+:root[data-theme="black_gold"] {
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -21,23 +33,31 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-sidebar-bg: var(--sidebar);
+  --color-surface: var(--surface);
   --color-success: var(--success);
   --color-gold: var(--gold);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --color-card-bg: var(--card);
   --color-border-custom: var(--border-color);
-  
+  --color-input: var(--input);
+
   --color-text-heading: var(--text-heading);
   --color-text-body: var(--text-body);
   --color-text-muted: var(--text-muted);
 
+  --color-sidebar-active-bg: var(--sidebar-active-bg);
+  --color-sidebar-active-text: var(--sidebar-active-text);
+  --color-sidebar-active-icon: var(--sidebar-active-icon);
+
   --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
-  
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 22px;
   --radius-full: 9999px;
-  
+
   --spacing-space-1: 4px;
   --spacing-space-2: 8px;
   --spacing-space-3: 12px;
@@ -51,6 +71,11 @@
 body {
   background-color: var(--background);
   color: var(--text-body);
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.theme-transition {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 
 /* Hide scrollbar utility */
@@ -69,4 +94,22 @@ body {
 }
 .animate-fade-in {
   animation: fade-in 0.25s ease-out forwards;
+}
+
+/* Modal overlay animation (opacity only — no transform) */
+@keyframes modal-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-modal-overlay-in {
+  animation: modal-overlay-in 0.2s ease-out forwards;
+}
+
+/* Theme panel slide-up */
+@keyframes theme-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-theme-panel-in {
+  animation: theme-panel-in 0.2s ease-out forwards;
 }

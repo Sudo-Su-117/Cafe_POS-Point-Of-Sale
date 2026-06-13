@@ -42,14 +42,14 @@ interface FloorPopupProps {
 export function FloorPopup({ onClose, onSelectTable }: FloorPopupProps) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[22px] w-full max-w-[640px] max-h-[85vh] overflow-y-auto shadow-2xl">
+      <div className="bg-surface border border-border-custom rounded-[22px] w-full max-w-[640px] max-h-[85vh] overflow-y-auto shadow-2xl theme-transition">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#D8CCBF]">
+        <div className="flex items-center justify-between p-6 border-b border-border-custom">
           <div>
             <h2 className="text-[20px] font-bold text-text-heading">Select a Table</h2>
             <p className="text-[13px] text-text-muted mt-0.5">Choose a table to start or continue an order</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-[12px] hover:bg-[#F1ECE5] text-text-muted transition-colors">
+          <button onClick={onClose} className="p-2 rounded-[12px] hover:bg-surface text-text-muted transition-colors theme-transition">
             <X size={20} />
           </button>
         </div>
@@ -57,11 +57,11 @@ export function FloorPopup({ onClose, onSelectTable }: FloorPopupProps) {
         {/* Legend */}
         <div className="flex items-center gap-4 px-6 pt-4 text-[12px] font-semibold text-text-muted">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-[4px] bg-[#F1ECE5] border border-[#D8CCBF]" />
+            <span className="w-3 h-3 rounded-[4px] bg-surface border border-border-custom theme-transition" />
             Available
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-[4px] bg-[#CB7637]" />
+            <span className="w-3 h-3 rounded-[4px] bg-primary" />
             Has Active Order
           </div>
         </div>
@@ -78,8 +78,8 @@ export function FloorPopup({ onClose, onSelectTable }: FloorPopupProps) {
                     onClick={() => { onSelectTable(table); onClose(); }}
                     className={`relative flex flex-col items-center justify-center gap-1.5 h-[90px] rounded-[16px] border-2 font-sans transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
                       table.hasOrder
-                        ? "bg-[#CB7637] border-[#B8682C] text-white shadow-md"
-                        : "bg-[#F1ECE5] border-[#D8CCBF] text-text-heading hover:border-[#CB7637] hover:bg-[#FAEEE0]"
+                        ? "bg-primary border-primary text-white shadow-md"
+                        : "bg-surface border-border-custom text-text-heading hover:border-primary hover:bg-primary/10"
                     }`}
                   >
                     {table.hasOrder && (
