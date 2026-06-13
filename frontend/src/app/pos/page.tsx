@@ -56,9 +56,9 @@ export default function POSPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowFloor(true)}
-            className="flex items-center gap-2 bg-[#F1ECE5] hover:bg-[#E8DECE] border border-[#D8CCBF] text-text-heading text-[13px] font-bold px-4 py-2 rounded-[12px] transition-colors"
+            className="flex items-center gap-2 bg-surface hover:bg-border-custom/30 border border-border-custom text-text-heading text-[13px] font-bold px-4 py-2 rounded-[12px] transition-colors theme-transition"
           >
-            <MapPin size={15} className="text-[#CB7637]" />
+            <MapPin size={15} className="text-primary" />
             {selectedTable ? selectedTable.number : "Select Table"}
           </button>
           {selectedTable && (
@@ -68,7 +68,7 @@ export default function POSPage() {
           )}
         </div>
         {kitchenSent && (
-          <div className="flex items-center gap-2 bg-[#E7F3DD] text-[#7C9C57] text-[13px] font-bold px-4 py-2 rounded-[12px] animate-pulse">
+          <div className="flex items-center gap-2 bg-success/10 text-success text-[13px] font-bold px-4 py-2 rounded-[12px] animate-pulse">
             ✅ Order sent to kitchen!
           </div>
         )}
@@ -77,7 +77,7 @@ export default function POSPage() {
       {/* Main POS Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] gap-5 flex-1 min-h-0">
         {/* Left: Product Grid */}
-        <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[20px] p-5 min-h-[500px] lg:h-full overflow-hidden flex flex-col">
+        <div className="bg-surface border border-border-custom rounded-[20px] p-5 min-h-[500px] lg:h-full overflow-hidden flex flex-col theme-transition">
           <ProductGrid onAddToCart={addToCart} />
         </div>
 

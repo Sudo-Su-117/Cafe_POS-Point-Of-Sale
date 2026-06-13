@@ -53,7 +53,7 @@ export function ProductGrid({ onAddToCart }: ProductGridProps) {
           placeholder="Search products..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full bg-[#F1ECE5] border border-[#D8CCBF] rounded-[12px] pl-9 pr-4 py-2.5 text-[14px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-[#CB7637] transition-colors"
+          className="w-full bg-surface border border-border-custom rounded-[12px] pl-9 pr-4 py-2.5 text-[14px] font-medium text-text-heading placeholder:text-text-muted outline-none focus:border-primary transition-colors theme-transition"
         />
       </div>
 
@@ -65,8 +65,8 @@ export function ProductGrid({ onAddToCart }: ProductGridProps) {
             onClick={() => setActiveCategory(cat)}
             className={`shrink-0 px-3.5 py-1.5 rounded-[10px] text-[13px] font-semibold transition-all whitespace-nowrap ${
               activeCategory === cat
-                ? "bg-[#CB7637] text-white shadow-sm"
-                : "bg-[#F1ECE5] text-text-muted hover:text-text-body"
+                ? "bg-primary text-white shadow-sm"
+                : "bg-surface text-text-muted hover:text-text-body"
             }`}
           >
             {cat}
@@ -80,7 +80,7 @@ export function ProductGrid({ onAddToCart }: ProductGridProps) {
           <button
             key={product.id}
             onClick={() => onAddToCart(product)}
-            className="bg-[#F1ECE5] border border-[#D8CCBF] rounded-[16px] p-3.5 flex flex-col gap-2 text-left hover:border-[#CB7637] hover:bg-[#FAEEE0] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150 group"
+            className="bg-surface border border-border-custom rounded-[16px] p-3.5 flex flex-col gap-2 text-left hover:border-primary hover:bg-primary/10 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150 group theme-transition"
           >
             <div className="flex items-center justify-between">
               <span className="text-2xl">{product.emoji}</span>
@@ -93,10 +93,10 @@ export function ProductGrid({ onAddToCart }: ProductGridProps) {
             </div>
             <div>
               <p className="text-[13px] font-bold text-text-heading leading-tight">{product.name}</p>
-              <p className="text-[15px] font-bold text-[#CB7637] mt-0.5">${product.price.toFixed(2)}</p>
+              <p className="text-[15px] font-bold text-primary mt-0.5">${product.price.toFixed(2)}</p>
             </div>
             <div className="flex items-center justify-end">
-              <span className="w-7 h-7 rounded-full bg-[#CB7637] group-hover:bg-[#B86830] flex items-center justify-center transition-colors">
+              <span className="w-7 h-7 rounded-full bg-primary group-hover:brightness-105 flex items-center justify-center transition-colors">
                 <Plus size={14} className="text-white" />
               </span>
             </div>

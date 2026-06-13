@@ -24,7 +24,7 @@ export function ProductCard({
   );
 
   return (
-    <div className="bg-white border border-[#D9CDC1] rounded-[20px] shadow-[0_2px_4px_rgba(0,0,0,0.03)] hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-[250ms] ease-in-out flex flex-col">
+    <div className="bg-input border border-border-custom rounded-[20px] shadow-[0_2px_4px_rgba(0,0,0,0.03)] hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-[250ms] ease-in-out flex flex-col theme-transition">
       <div className="relative m-[10px]">
         <div className="relative h-[170px] w-full overflow-hidden rounded-[14px]">
           <Image
@@ -38,7 +38,7 @@ export function ProductCard({
 
         <span
           className={`absolute top-1.5 right-1.5 w-[14px] h-[14px] rounded-full border-[3px] border-white ${
-            product.active ? "bg-[#789658]" : "bg-[#C5BAB0]"
+            product.active ? "bg-success" : "bg-border-custom/70"
           }`}
           aria-label={product.active ? "Available" : "Unavailable"}
         />
@@ -49,12 +49,12 @@ export function ProductCard({
           <h3 className="text-[15px] font-bold text-text-heading font-sans truncate">
             {product.name}
           </h3>
-          <span className="text-[15px] font-bold text-[#C9783A] font-sans shrink-0">
+          <span className="text-[15px] font-bold text-primary font-sans shrink-0">
             ${product.price.toFixed(2)}
           </span>
         </div>
 
-        <p className="text-[13px] font-medium text-[#7E6B5D] font-sans mt-1">
+        <p className="text-[13px] font-medium text-text-body font-sans mt-1">
           {product.category} · {product.uom} · {product.tax} tax
         </p>
 
@@ -68,8 +68,8 @@ export function ProductCard({
                 onClick={() => setSelectedSize(size)}
                 className={`h-[26px] px-3 rounded-full text-[13px] font-semibold font-sans transition-colors duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-[#C9783A] text-white"
-                    : "bg-white text-text-body border border-[#D8CCBF] hover:border-[#C9783A]/40"
+                    ? "bg-primary text-white"
+                    : "bg-white text-text-body border border-border-custom hover:border-primary/40"
                 }`}
               >
                 {size}
@@ -78,7 +78,7 @@ export function ProductCard({
           })}
         </div>
 
-        <div className="mt-3 pt-2.5 border-t border-[#E4D8CC] flex items-center justify-between">
+        <div className="mt-3 pt-2.5 border-t border-border-custom flex items-center justify-between">
           <StatusToggle
             checked={product.active}
             onChange={() => onToggleActive(product.id)}

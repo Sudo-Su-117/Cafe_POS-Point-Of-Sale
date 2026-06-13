@@ -10,11 +10,11 @@ interface CategoryItem {
 }
 
 const categories: CategoryItem[] = [
-  { name: "Espresso", percentage: 35, color: "#C9783A", revenue: "$2,958" },
-  { name: "Cold Brew", percentage: 20, color: "#866443", revenue: "$1,690" },
-  { name: "Pastries", percentage: 18, color: "#D6A144", revenue: "$1,521" },
-  { name: "Sandwiches", percentage: 15, color: "#789658", revenue: "$1,268" },
-  { name: "Tea", percentage: 12, color: "#A86D4D", revenue: "$1,014" },
+  { name: "Espresso", percentage: 35, color: "var(--primary)", revenue: "$2,958" },
+  { name: "Cold Brew", percentage: 20, color: "var(--sidebar)", revenue: "$1,690" },
+  { name: "Pastries", percentage: 18, color: "var(--gold)", revenue: "$1,521" },
+  { name: "Sandwiches", percentage: 15, color: "var(--success)", revenue: "$1,268" },
+  { name: "Tea", percentage: 12, color: "var(--primary)", revenue: "$1,014" },
 ];
 
 export function CategoryChart() {
@@ -26,7 +26,7 @@ export function CategoryChart() {
   const circumference = 2 * Math.PI * radius; // Approx 502.65
 
   return (
-    <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[20px] p-6 flex flex-col hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px]">
+    <div className="bg-surface border border-border-custom rounded-[20px] p-6 flex flex-col hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px] theme-transition">
       <div className="flex items-center justify-between mb-2 shrink-0">
         <h3 className="text-[18px] font-bold text-text-heading font-sans">
           Top Categories
@@ -43,7 +43,7 @@ export function CategoryChart() {
             cy="110"
             r={radius}
             fill="transparent"
-            stroke="#F1ECE5"
+            stroke="var(--surface)"
             strokeWidth={strokeWidth}
           />
 

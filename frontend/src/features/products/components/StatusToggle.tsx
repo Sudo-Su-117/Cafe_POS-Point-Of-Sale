@@ -13,7 +13,7 @@ export function StatusToggle({ checked, onChange }: StatusToggleProps) {
       type="button"
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-[26px] w-[48px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out select-none ${
-        checked ? "bg-[#789658]" : "bg-[#E5DED5]"
+        checked ? "bg-success" : "bg-border-custom/50"
       }`}
       aria-label="Toggle active status"
     >

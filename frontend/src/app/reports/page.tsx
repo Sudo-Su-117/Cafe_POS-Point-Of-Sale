@@ -24,16 +24,16 @@ export default function ReportsPage() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {/* Period filter */}
-          <div className="flex bg-[#F1ECE5] rounded-[14px] p-1 gap-1">
+          <div className="flex bg-surface rounded-[14px] p-1 gap-1 theme-transition">
             {periods.map(p => (
               <button key={p} onClick={() => setActivePeriod(p)}
-                className={`px-3 py-1.5 rounded-[11px] text-[13px] font-semibold transition-all ${activePeriod === p ? "bg-white text-[#CB7637] shadow-sm" : "text-text-muted hover:text-text-body"}`}>
+                className={`px-3 py-1.5 rounded-[11px] text-[13px] font-semibold transition-all ${activePeriod === p ? "bg-white text-primary shadow-sm" : "text-text-muted hover:text-text-body"}`}>
                 {p}
               </button>
             ))}
           </div>
           {/* Export */}
-          <button className="flex items-center gap-2 bg-[#CB7637] hover:bg-[#b86830] text-white text-[13px] font-semibold px-4 py-2 rounded-[12px] transition-colors">
+          <button className="flex items-center gap-2 bg-primary hover:brightness-105 text-white text-[13px] font-semibold px-4 py-2 rounded-[12px] transition-colors">
             <Download size={15} />
             Export
           </button>

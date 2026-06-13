@@ -63,7 +63,7 @@ export function SalesChart() {
   const yTicks = [0, 550, 1100, 1650, 2200];
 
   return (
-    <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[20px] p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px] relative">
+    <div className="bg-surface border border-border-custom rounded-[20px] p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px] relative theme-transition">
       
       {/* Title & Legend row */}
       <div className="flex items-center justify-between mb-2 select-none">
@@ -72,11 +72,11 @@ export function SalesChart() {
         </h3>
         <div className="flex items-center gap-4 text-xs font-semibold">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 rounded-full bg-[#CB7637] border-t-2 border-[#CB7637]"></span>
+            <span className="w-3 h-0.5 rounded-full bg-primary border-t-2 border-primary"></span>
             <span className="text-text-body">Sales</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 rounded-full bg-[#78964E] border-t-2 border-[#78964E]"></span>
+            <span className="w-3 h-0.5 rounded-full bg-success border-t-2 border-success"></span>
             <span className="text-text-body">Orders</span>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function SalesChart() {
                   y1={y}
                   x2={svgWidth - paddingRight}
                   y2={y}
-                  stroke="#D8CCBF"
+                  stroke="var(--border-color)"
                   strokeWidth={0.75}
                   strokeDasharray="4 4"
                 />
@@ -134,7 +134,7 @@ export function SalesChart() {
           <path
             d={orangePath}
             fill="none"
-            stroke="#CB7637"
+            stroke="var(--primary)"
             strokeWidth={3}
             strokeLinecap="round"
             className="transition-all duration-300"
@@ -142,7 +142,7 @@ export function SalesChart() {
           <path
             d={greenPath}
             fill="none"
-            stroke="#78964E"
+            stroke="var(--success)"
             strokeWidth={3}
             strokeLinecap="round"
             className="transition-all duration-300"
@@ -155,7 +155,7 @@ export function SalesChart() {
               y1={paddingTop}
               x2={getX(hoveredIdx)}
               y2={svgHeight - paddingBottom}
-              stroke="#D8CCBF"
+              stroke="var(--border-color)"
               strokeWidth={1.5}
               strokeDasharray="2 2"
             />
@@ -168,7 +168,7 @@ export function SalesChart() {
               cx={pt[0]}
               cy={pt[1]}
               r={hoveredIdx === i ? 6 : 4}
-              className="fill-[#CB7637] stroke-white stroke-2 cursor-pointer transition-all duration-150"
+              className="fill-primary stroke-white stroke-2 cursor-pointer transition-all duration-150"
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             />
@@ -181,7 +181,7 @@ export function SalesChart() {
               cx={pt[0]}
               cy={pt[1]}
               r={hoveredIdx === i ? 6 : 4}
-              className="fill-[#78964E] stroke-white stroke-2 cursor-pointer transition-all duration-150"
+              className="fill-success stroke-white stroke-2 cursor-pointer transition-all duration-150"
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             />
@@ -210,7 +210,7 @@ export function SalesChart() {
         {/* Floating Custom HTML Tooltip */}
         {hoveredIdx !== null && (
           <div
-            className="absolute bg-[#FDFBF9] border border-[#D8CCBF] rounded-xl p-3 px-4 shadow-[0_4px_12px_rgba(0,0,0,0.06)] pointer-events-none transition-all duration-150 z-20 font-sans min-w-[120px]"
+            className="absolute bg-surface border border-border-custom rounded-xl p-3 px-4 shadow-[0_4px_12px_rgba(0,0,0,0.06)] pointer-events-none transition-all duration-150 z-20 font-sans min-w-[120px] theme-transition"
             style={{
               left: `${((getX(hoveredIdx) - paddingLeft) / chartWidth) * 82 + 8}%`,
               top: "60px",
@@ -221,11 +221,11 @@ export function SalesChart() {
               {chartData[hoveredIdx].day}
             </div>
             <div className="flex flex-col gap-1 text-[12px] font-semibold font-sans">
-              <div className="text-[#CB7637] flex items-center justify-between gap-4">
+              <div className="text-primary flex items-center justify-between gap-4">
                 <span>revenue :</span>
                 <span>{chartData[hoveredIdx].sales}</span>
               </div>
-              <div className="text-[#78964E] flex items-center justify-between gap-4">
+              <div className="text-success flex items-center justify-between gap-4">
                 <span>orders :</span>
                 <span>{chartData[hoveredIdx].orders}</span>
               </div>

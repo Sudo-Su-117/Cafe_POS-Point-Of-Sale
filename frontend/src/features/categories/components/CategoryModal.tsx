@@ -44,7 +44,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
       <div
-        className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[24px] w-full max-w-[460px] shadow-2xl overflow-hidden"
+        className="bg-surface border border-border-custom rounded-[24px] w-full max-w-[460px] shadow-2xl overflow-hidden theme-transition"
         onClick={e => e.stopPropagation()}
       >
         {/* Header with accent strip */}
@@ -63,14 +63,14 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
             </div>
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-[#F1ECE5] hover:bg-[#E8DECE] text-text-muted hover:text-text-heading transition-colors"
+              className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-surface hover:bg-border-custom/30 text-text-muted hover:text-text-heading transition-colors theme-transition"
             >
               <X size={18} />
             </button>
           </div>
 
           {/* Preview pill */}
-          <div className="flex items-center gap-3 bg-[#F1ECE5] border border-[#D8CCBF] rounded-[16px] px-4 py-3">
+          <div className="flex items-center gap-3 bg-surface border border-border-custom rounded-[16px] px-4 py-3 theme-transition">
             <span className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Preview</span>
             <span
               className="px-3.5 py-1.5 rounded-full text-[13px] font-bold text-white shadow-sm select-none transition-all duration-200"
@@ -88,12 +88,12 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
               value={name}
               onChange={e => { setName(e.target.value); setNameError(""); }}
               placeholder="e.g. Espresso, Pastries…"
-              className={`bg-[#F1ECE5] border rounded-[12px] px-4 py-3 text-[14px] font-semibold text-text-heading placeholder:text-text-muted outline-none transition-colors ${
-                nameError ? "border-[#D55C4C] focus:border-[#D55C4C]" : "border-[#D8CCBF] focus:border-[#CB7637]"
+              className={`bg-surface border rounded-[12px] px-4 py-3 text-[14px] font-semibold text-text-heading placeholder:text-text-muted outline-none transition-colors ${
+                nameError ? "border-danger focus:border-danger" : "border-border-custom focus:border-primary"
               }`}
             />
             {nameError && (
-              <p className="text-[12px] font-semibold text-[#D55C4C]">{nameError}</p>
+              <p className="text-[12px] font-semibold text-danger">{nameError}</p>
             )}
           </div>
 
@@ -110,7 +110,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
                   className="w-8 h-8 rounded-[10px] border-2 flex items-center justify-center transition-all duration-150 hover:scale-110"
                   style={{
                     backgroundColor: c,
-                    borderColor: color === c ? "#2B1F16" : "transparent",
+                    borderColor: color === c ? "var(--text-heading)" : "transparent",
                     boxShadow: color === c ? "0 0 0 2px white, 0 0 0 4px " + c : "none",
                   }}
                 >
@@ -120,7 +120,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
             </div>
 
             {/* Custom hex input */}
-            <div className="flex items-center gap-3 bg-[#F1ECE5] border border-[#D8CCBF] rounded-[12px] px-3 py-2">
+            <div className="flex items-center gap-3 bg-surface border border-border-custom rounded-[12px] px-3 py-2 theme-transition">
               <div
                 className="w-7 h-7 rounded-[8px] border border-white/30 shrink-0 shadow-sm transition-all duration-200"
                 style={{ backgroundColor: color }}
@@ -140,7 +140,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 bg-[#F1ECE5] hover:bg-[#E8DECE] text-text-heading text-[14px] font-bold py-3 rounded-[14px] transition-colors"
+              className="flex-1 bg-surface hover:bg-border-custom/30 text-text-heading text-[14px] font-bold py-3 rounded-[14px] transition-colors theme-transition"
             >
               Cancel
             </button>
