@@ -322,97 +322,22 @@ export class ReportsService {
       productDrops,
     };
 
-    const promptText = `Analyze the following sales performance data for "Cafe POS" and provide 5-6 concise, actionable, bulleted insights and recommendations for the cafe owner.
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    try {
+      const response = await globalThis.fetch(`${aiServiceUrl}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataSummary),
+      });
 
-Data Summary:
-- Period: Last 7 Days (vs Prior 7 Days)
-- Current Week Revenue: $${currentRevenue.toFixed(2)} (${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}% growth)
-- Current Week Orders: ${currentOrders.length}
-- Top Products:
-${topProducts.map((p) => `  * ${p.name}: ${p.qty} sold, $${p.revenue.toFixed(2)} revenue`).join('\n')}
-- Category Contributions:
-${categoryContributions.map((c) => `  * ${c.name}: $${c.revenue.toFixed(2)} (${c.percentage}%)`).join('\n')}
-- Top Tables:
-${topTables.map((t) => `  * ${t.name}: $${t.revenue.toFixed(2)}`).join('\n')}
-- Peak Hours:
-${peakHours.map((h) => `  * ${h.hour}:00 - ${h.hour + 1}:00 (${h.count} orders)`).join('\n')}
-- Significant Drops in Sales Qty:
-${productDrops.map((d) => `  * ${d.name}: -${d.dropPercentage}% drop (from ${d.prevQty} to ${d.currQty})`).join('\n')}
-
-Formatting Constraints:
-- Return exactly 5-6 bullet points.
-- Do not add any greeting, intro, or concluding remarks.
-- Provide direct insights first (e.g. "Revenue increased X%", "Y contributes Z% of sales").
-- Conclude with a solid recommendation based on the data.`;
-
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const openAIKey = process.env.OPENAI_API_KEY;
-
-    if (geminiKey) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-        const response = await globalThis.fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-          }),
-        });
-
-        if (response.ok) {
-          const resJson: any = await response.json();
-          const text = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            return {
-              source: 'gemini',
-              insights: text
-                .split('\n')
-                .map((line) => line.trim())
-                .filter((line) => line.startsWith('*') || line.startsWith('-') || line.match(/^\d+\./)),
-              rawData: dataSummary,
-            };
-          }
-        }
-      } catch (err) {
-        console.error('Failed to get insights from Gemini API', err);
+      if (response.ok) {
+        return await response.json();
+      } else {
+        const errText = await response.text();
+        console.error('AI Service returned error:', errText);
       }
-    }
-
-    if (openAIKey) {
-      try {
-        const response = await globalThis.fetch(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${openAIKey}`,
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [{ role: 'user', content: promptText }],
-              temperature: 0.5,
-            }),
-          },
-        );
-
-        if (response.ok) {
-          const resJson: any = await response.json();
-          const text = resJson?.choices?.[0]?.message?.content;
-          if (text) {
-            return {
-              source: 'openai',
-              insights: text
-                .split('\n')
-                .map((line) => line.trim())
-                .filter((line) => line.startsWith('*') || line.startsWith('-') || line.match(/^\d+\./)),
-              rawData: dataSummary,
-            };
-          }
-        }
-      } catch (err) {
-        console.error('Failed to get insights from OpenAI API', err);
-      }
+    } catch (err) {
+      console.error('Failed to connect to AI Service:', err);
     }
 
     const localInsights = [
