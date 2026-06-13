@@ -20,19 +20,19 @@ const ordersData: OrderRow[] = [
 
 export function OrdersTable() {
   const statusStyles = {
-    Paid: "bg-[#E7F3DD] text-[#7C9C57]",
-    Draft: "bg-[#FFF1D9] text-[#D6A144]",
-    Cancelled: "bg-[#FFE3DE] text-[#D55C4C]",
+    Paid: "bg-success/10 text-success",
+    Draft: "bg-gold/10 text-gold",
+    Cancelled: "bg-danger/10 text-danger",
   };
 
   return (
-    <div className="bg-[#F7F3ED] border border-[#D8CCBF] rounded-[20px] p-6 hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px] flex flex-col justify-between">
+    <div className="bg-surface border border-border-custom rounded-[20px] p-6 hover:translate-y-[-2px] transition-all duration-200 shadow-[0_1px_1px_rgba(0,0,0,0.03)] h-[440px] flex flex-col justify-between theme-transition">
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[18px] font-bold text-text-heading font-sans">
             Recent Orders
           </h3>
-          <button className="text-[13px] font-semibold text-text-muted hover:text-primary transition-colors bg-[#F1ECE5] px-3.5 py-1.5 rounded-[12px] cursor-pointer select-none">
+          <button className="text-[13px] font-semibold text-text-muted hover:text-primary transition-colors bg-surface px-3.5 py-1.5 rounded-[12px] cursor-pointer select-none theme-transition">
             Export
           </button>
         </div>
@@ -40,7 +40,7 @@ export function OrdersTable() {
         <div className="overflow-x-auto w-full">
           <table className="w-full border-collapse text-left font-sans min-w-[420px]">
             <thead>
-              <tr className="bg-[#F1ECE5] rounded-xl overflow-hidden">
+              <tr className="bg-surface rounded-xl overflow-hidden theme-transition">
                 <th className="px-4 py-3 text-[13px] font-bold text-text-heading rounded-l-[14px]">
                   Order
                 </th>
@@ -62,9 +62,9 @@ export function OrdersTable() {
               {ordersData.map((row) => (
                 <tr
                   key={row.id}
-                  className="h-[56px] border-b border-[#D8CCBF]/60 last:border-0 hover:bg-white/40 transition-colors"
+                  className="h-[56px] border-b border-border-custom/60 last:border-0 hover:bg-white/40 transition-colors"
                 >
-                  <td className="px-4 py-2 text-[14px] font-bold text-[#CB7637]">
+                  <td className="px-4 py-2 text-[14px] font-bold text-primary">
                     {row.id}
                   </td>
                   <td className="px-4 py-2 text-[14px] font-semibold text-text-body">

@@ -24,7 +24,7 @@ export function Header() {
       {/* Right side: User Profile Info */}
       <div className="flex items-center gap-3">
         {/* Initials Avatar */}
-        <div className="w-[40px] h-[40px] rounded-full bg-[#D07B36] flex items-center justify-center text-white font-bold text-[15px] select-none shadow-sm">
+        <div className="w-[40px] h-[40px] rounded-full bg-primary flex items-center justify-center text-white font-bold text-[15px] select-none shadow-sm">
           OC
         </div>
         
@@ -33,7 +33,7 @@ export function Header() {
           <span className="text-[15px] font-semibold text-text-heading font-sans">
             Olivia Chen
           </span>
-          <span className="h-[28px] px-3 rounded-full bg-[#F2E5D6] text-[#D2874B] text-[13px] font-semibold flex items-center justify-center select-none">
+          <span className="h-[28px] px-3 rounded-full bg-primary/10 text-primary text-[13px] font-semibold flex items-center justify-center select-none">
             Admin
           </span>
         </div>
