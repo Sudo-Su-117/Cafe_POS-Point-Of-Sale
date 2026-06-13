@@ -3,9 +3,26 @@
 import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+
+const pageTitles: Record<string, string> = {
+  "/":          "Dashboard",
+  "/products":  "Products",
+  "/categories":"Categories",
+  "/payments":  "Payment Methods",
+  "/coupons":   "Coupons & Promos",
+  "/bookings":  "Bookings",
+  "/users":     "Users",
+  "/kds-config":"KDS Config",
+  "/reports":   "Reports",
+  "/pos":       "POS Terminal",
+  "/kds":       "Kitchen KDS",
+};
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const title = pageTitles[pathname] ?? "Brewhouse";
 
   return (
     <div className="min-h-screen bg-background flex flex-row overflow-x-hidden">
@@ -32,7 +49,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <span className="text-text-muted font-mono font-medium text-lg hidden lg:inline">#</span>
                 <h1 className="text-[22px] sm:text-[28px] font-bold text-text-heading leading-none font-sans">
-                  Dashboard
+                  {title}
                 </h1>
               </div>
               <p className="text-[12px] sm:text-[13px] font-medium text-text-muted mt-1 select-none">
