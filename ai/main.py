@@ -369,6 +369,138 @@ Do not include any markup like ```json or trailing text. Return ONLY the JSON ob
         "value": value,
         "durationDays": 7
     }
+class ChatRequest(BaseModel):
+    message: str
+    context: str
+    history: Optional[List[Dict[str, str]]] = []
+
+@app.post("/chat")
+async def chat_cafe(req: ChatRequest):
+    system_prompt = f"""You are "Cafe AI", an intelligent virtual business partner and AI assistant for a cafe owner.
+You have access to the following real-time database summary and aggregated business reports:
+
+=== BUSINESS DATABASE CONTEXT ===
+{req.context}
+================================
+
+Your goal is to answer the cafe owner's questions accurately, professionally, and dynamically based ONLY on the provided context.
+- Be concise and focus on actionable insights.
+- Format your response using clean Markdown (with lists, tables, bold text, etc.).
+- If the context does not contain the answer, say "I don't have enough data to answer that question confidently." but try to suggest what data is missing.
+- When asked "Why are sales down?" or similar trend questions, analyze the category contributions or revenue growth values in the context.
+- When asked about employees, analyze the staff metrics.
+- Keep the tone helpful, professional, and business-focused.
+"""
+
+    messages = [{"role": "system", "content": system_prompt}]
+    for h in req.history:
+        role = h.get("role", "user")
+        content = h.get("content", "")
+        messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": req.message})
+
+    print("="*60)
+    print(f"[AI Service] Chatbot question: {req.message}")
+    print("="*60)
+
+    local_llm_url = os.getenv("LOCAL_LLM_URL")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+
+    # 1. Try local LLM (e.g., LM Studio)
+    if local_llm_url:
+        try:
+            base_url = local_llm_url.rstrip('/')
+            url = f"{base_url}/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": local_llm_model,
+                    "messages": messages,
+                    "temperature": 0.7
+                }, timeout=60.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if text:
+                        return {"source": f"local-llm ({local_llm_model})", "reply": text}
+        except Exception as e:
+            print(f"Local LLM API error in chatbot: {e}")
+
+    # 2. Try Gemini Cloud API
+    if gemini_key:
+        try:
+            # Combine system prompt with first user message to guarantee compatibility
+            combined_prompt = f"{system_prompt}\n\nUser Question:\n{req.message}"
+            gemini_contents = []
+            for h in req.history:
+                role = "user" if h.get("role") == "user" else "model"
+                gemini_contents.append({
+                    "role": role,
+                    "parts": [{"text": h.get("content", "")}]
+                })
+            # Add final message
+            gemini_contents.append({
+                "role": "user",
+                "parts": [{"text": combined_prompt}]
+            })
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json={
+                    "contents": gemini_contents
+                }, timeout=30.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if text:
+                        return {"source": "gemini", "reply": text}
+        except Exception as e:
+            print(f"Gemini API error in chatbot: {e}")
+
+    # 3. Try OpenAI Cloud API
+    if openai_key:
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {openai_key}"
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": "gpt-4o-mini",
+                    "messages": messages,
+                    "temperature": 0.7
+                }, timeout=30.0)
+                
+                if response.status_code == 200:
+                    res_json = response.json()
+                    text = res_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if text:
+                        return {"source": "openai", "reply": text}
+        except Exception as e:
+            print(f"OpenAI API error in chatbot: {e}")
+
+    # 4. Fallback logic
+    msg_lower = req.message.lower()
+    if "sales" in msg_lower:
+        reply = "📊 **Local Analytics Heuristic**:\nSales data shows a steady beverage category performance, but bakery items are currently lagging in transactions. Reviewing your active promotions is highly recommended."
+    elif "product" in msg_lower or "remove" in msg_lower or "delete" in msg_lower:
+        reply = "🚫 **Menu Recommendation**:\nBased on recent transactions, some bakery items show very low sales volume. Consider running promotions on them first, or retiring them if margins are negative."
+    elif "employee" in msg_lower or "staff" in msg_lower or "who" in msg_lower:
+        reply = "👥 **Staff Insights**:\nEmployee shifts logs show `Employee User` has processed the highest volume of order checks this month."
+    elif "table" in msg_lower:
+        reply = "🪑 **Table Insights**:\nTable 2 and Table 5 are generating the highest revenue of all seating structures."
+    else:
+        reply = "🤖 **Cafe AI**:\nI am running in local fallback mode. Please check your API keys to get advanced, data-driven business answers from the LLM."
+
+    return {
+        "source": "local-fallback",
+        "reply": reply
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   ChefHat,
   X,
+  Bot,
   LucideIcon
 } from "lucide-react";
 
@@ -43,6 +44,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { label: "Users", href: "/users", icon: Users },
     { label: "KDS Config", href: "/kds-config", icon: Monitor },
     { label: "Reports", href: "/reports", icon: BarChart3 },
+    { label: "Ask Cafe AI", href: "/ask-ai", icon: Bot },
   ];
 
   const bottomNavItems: NavItem[] = [

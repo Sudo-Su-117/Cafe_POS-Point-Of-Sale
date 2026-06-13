@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DateRangeDto } from '../dto/date-range.dto';
+import { ChatRequestDto } from '../dto/chat-request.dto';
 
 @Injectable()
 export class ReportsService {
@@ -402,6 +403,156 @@ export class ReportsService {
       source: 'local-analytics-fallback',
       insights: localInsights,
       rawData: dataSummary,
+    };
+  }
+
+  async chatCafe(chatRequest: ChatRequestDto) {
+    // 1. Get all products and categories
+    const products = await this.prisma.product.findMany({
+      include: { category: true },
+    });
+
+    // 2. Get 30-day order statistics
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const orderItems = await this.prisma.orderItem.findMany({
+      where: {
+        order: {
+          createdAt: { gte: thirtyDaysAgo },
+          status: 'COMPLETED',
+        },
+      },
+      select: {
+        productId: true,
+        quantity: true,
+        unitPrice: true,
+      },
+    });
+
+    const salesQtyMap = new Map<string, number>();
+    const salesRevMap = new Map<string, number>();
+    for (const item of orderItems) {
+      salesQtyMap.set(item.productId, (salesQtyMap.get(item.productId) || 0) + item.quantity);
+      salesRevMap.set(item.productId, (salesRevMap.get(item.productId) || 0) + item.quantity * item.unitPrice);
+    }
+
+    // Sort products by sales volume
+    const sortedProducts = products.map((p) => ({
+      name: p.name,
+      category: p.category?.name || 'Uncategorized',
+      price: Number(p.price),
+      qtySold: salesQtyMap.get(p.id) || 0,
+      revenue: salesRevMap.get(p.id) || 0,
+    })).sort((a, b) => b.qtySold - a.qtySold);
+
+    const bestProducts = sortedProducts.slice(0, 5);
+    const slowProducts = sortedProducts.filter(p => p.qtySold <= 5).slice(0, 5);
+
+    // 3. Table Performance
+    const orders = await this.prisma.order.findMany({
+      where: { status: 'COMPLETED' },
+      include: { items: true, table: true },
+    });
+
+    const tableSales: { [key: string]: number } = {};
+    for (const o of orders) {
+      if (o.table) {
+        const total = o.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+        tableSales[o.table.name] = (tableSales[o.table.name] || 0) + total;
+      }
+    }
+    const sortedTables = Object.entries(tableSales)
+      .map(([name, rev]) => ({ name, revenue: rev }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    // 4. Employees and Session counts
+    const employees = await this.prisma.user.findMany({
+      select: { id: true, name: true, role: true, email: true },
+    });
+
+    const sessionCounts = await this.prisma.session.groupBy({
+      by: ['userId'],
+      _count: {
+        id: true,
+      },
+      where: {
+        status: 'closed',
+      },
+    });
+
+    const sessionMap = new Map(sessionCounts.map((s) => [s.userId || '', s._count.id]));
+
+    // 5. Total Store Metrics
+    const totalOrdersCount = orders.length;
+    const totalStoreRevenue = orders.reduce((sum, o) => {
+      return sum + o.items.reduce((itemSum, i) => itemSum + i.unitPrice * i.quantity, 0);
+    }, 0);
+
+    // 6. Build the Context Markdown
+    const employeeRows = employees.map(emp => {
+      const shifts = sessionMap.get(emp.id) || 0;
+      return `- ${emp.name} (${emp.email}): Role: ${emp.role}, Completed Shifts: ${shifts}`;
+    }).join('\n');
+
+    const topProductRows = bestProducts.map(p => {
+      return `- ${p.name} (${p.category}): ${p.qtySold} sold, $${p.revenue.toFixed(2)} revenue`;
+    }).join('\n');
+
+    const slowProductRows = slowProducts.map(p => {
+      return `- ${p.name} (${p.category}): ${p.qtySold} sold (Slow Moving)`;
+    }).join('\n');
+
+    const tableRows = sortedTables.map(t => {
+      return `- ${t.name}: $${t.revenue.toFixed(2)} total billing`;
+    }).join('\n');
+
+    const context = `
+=== BUSINESS OVERVIEW ===
+- Total Completed Orders: ${totalOrdersCount}
+- Total Store Revenue: $${totalStoreRevenue.toFixed(2)}
+- Average Order Ticket: $${totalOrdersCount > 0 ? (totalStoreRevenue / totalOrdersCount).toFixed(2) : '0.00'}
+
+=== TOP PRODUCTS (LAST 30 DAYS) ===
+${topProductRows || '- No products sold yet.'}
+
+=== SLOW-MOVING PRODUCTS (LAST 30 DAYS) ===
+${slowProductRows || '- No slow products identified.'}
+
+=== TABLE BILLING ===
+${tableRows || '- No table orders completed yet.'}
+
+=== STAFF & SHIFTS OVERVIEW ===
+${employeeRows || '- No employees registered.'}
+`;
+
+    console.log('[Reports Service - Chatbot] Generated context size:', context.length, 'chars');
+
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    try {
+      const response = await globalThis.fetch(`${aiServiceUrl}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: chatRequest.message,
+          context: context,
+          history: chatRequest.history || [],
+        }),
+      });
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        const errText = await response.text();
+        console.error('AI Service /chat returned error:', errText);
+      }
+    } catch (err) {
+      console.error('Failed to connect to AI Service /chat:', err);
+    }
+
+    // Fallback response if LLM is down
+    return {
+      source: 'local-fallback',
+      reply: '🤖 **Cafe AI**:\nI am running in local offline mode. Please verify the AI microservice status.'
     };
   }
 }
