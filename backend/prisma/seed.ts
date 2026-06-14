@@ -266,8 +266,10 @@ async function main() {
 
   // Start Date: exactly 1 year ago (365 days ago)
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const startDate = new Date();
   startDate.setDate(today.getDate() - 365);
+  startDate.setHours(0, 0, 0, 0);
 
   console.log(`Generating orders from ${startDate.toDateString()} to ${today.toDateString()}...`);
 
@@ -284,7 +286,7 @@ async function main() {
     p.categoryId === categoriesMap['Sandwiches & Wraps'] || p.categoryId === categoriesMap['Cold Beverages'] || p.categoryId === categoriesMap['Desserts']
   );
 
-  while (currentDay <= today) {
+  while (currentDay < today) {
     // Generate daily session for employee
     const sessionStart = new Date(currentDay);
     sessionStart.setHours(7, 30, 0, 0); // shift starts at 7:30 AM
