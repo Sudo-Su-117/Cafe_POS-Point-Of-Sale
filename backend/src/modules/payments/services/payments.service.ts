@@ -58,7 +58,7 @@ export class PaymentsService {
       where: { id: orderId },
     });
 
-    let targetStatus = 'COMPLETED';
+    let targetStatus = 'SENT_TO_KITCHEN';
     let discountTotal = 0;
     let grandTotal = amount;
 
@@ -66,9 +66,12 @@ export class PaymentsService {
       if (
         orderObj.status === 'SENT_TO_KITCHEN' ||
         orderObj.status === 'PREPARING' ||
-        orderObj.status === 'COMPLETED'
+        orderObj.status === 'COMPLETED' ||
+        orderObj.status === 'PAID'
       ) {
         targetStatus = orderObj.status;
+      } else {
+        targetStatus = 'SENT_TO_KITCHEN';
       }
 
       const sub = Number(orderObj.subtotal);

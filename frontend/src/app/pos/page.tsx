@@ -424,12 +424,15 @@ export default function POSPage() {
 
       // Send to kitchen so it appears in KDS
       try {
-        await fetch(`http://localhost:3000/orders/${orderId}/send-to-kitchen`, {
+        const sendKdsRes = await fetch(`http://localhost:3000/orders/${orderId}/send-to-kitchen`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         });
-      } catch {
-        // Order may already be sent to kitchen — continue with payment
+        if (!sendKdsRes.ok) {
+          console.warn(`[KDS] Send to kitchen returned status ${sendKdsRes.status}:`, await sendKdsRes.text().catch(() => ""));
+        }
+      } catch (err) {
+        console.error("Failed to send order to kitchen:", err);
       }
 
       // Record checkout payment
