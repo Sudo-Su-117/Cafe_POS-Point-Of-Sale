@@ -16,7 +16,7 @@ interface CategoryModalProps {
   mode: "add" | "edit";
   initial?: Category | null;
   existingNames: string[];
-  onSave: (data: { name: string; color: string; image: string | null }) => void;
+  onSave: (data: { name: string; color: string; image: string | null; imageFile: File | null }) => void;
   onClose: () => void;
 }
 
@@ -25,6 +25,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
   const [color,       setColor]       = useState(initial?.color       ?? PRESET_COLORS[0]);
   const [customColor, setCustomColor] = useState(initial?.color       ?? PRESET_COLORS[0]);
   const [image,       setImage]       = useState<string | null>(initial?.image ?? null);
+  const [imageFile,   setImageFile]   = useState<File | null>(null);
   const [nameError,   setNameError]   = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +41,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImageFile(file);
     const reader = new FileReader();
     reader.onload = ev => setImage(ev.target?.result as string);
     reader.readAsDataURL(file);
@@ -52,7 +54,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
       .filter(n => mode === "edit" ? n !== initial?.name : true)
       .some(n => n.toLowerCase() === trimmed.toLowerCase());
     if (isDupe) { setNameError("A category with this name already exists."); return; }
-    onSave({ name: trimmed, color, image });
+    onSave({ name: trimmed, color, image, imageFile });
   };
 
   return (
@@ -98,7 +100,7 @@ export function CategoryModal({ mode, initial, existingNames, onSave, onClose }:
           <div className="flex flex-col gap-2">
             <label className="text-[13px] font-bold text-text-heading">Category Image <span className="text-text-muted font-medium">(optional)</span></label>
 
-            {image ? (
+            {image && typeof image === "string" && image.trim() !== "" ? (
               /* Uploaded image preview */
               <div className="relative rounded-[16px] overflow-hidden border border-[#D8CCBF] group" style={{ height: 140 }}>
                 <Image src={image} alt="Category" fill className="object-cover" unoptimized />

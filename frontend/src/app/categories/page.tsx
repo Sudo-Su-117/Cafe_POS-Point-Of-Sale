@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Search, Tag, Package, TrendingUp, Layers } from "lucide-react";
 import { Category } from "@/features/categories/components/types";
 import { CategoryCard } from "@/features/categories/components/CategoryCard";
@@ -27,7 +27,7 @@ const newId = () => String(idCounter++);
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function CategoriesPage() {
-  const [categories, setCategories]   = useState<Category[]>(SEED_CATEGORIES);
+  const [categories, setCategories]   = useState<Category[]>([]);
   const [search, setSearch]           = useState("");
   const [sort, setSort]               = useState<SortKey>("name");
   const [modal, setModal]             = useState<"add" | "edit" | null>(null);
@@ -35,6 +35,86 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [viewTarget, setViewTarget]   = useState<Category | null>(null);
   const [toast, setToast]             = useState<string | null>(null);
+  const [token, setToken]             = useState<string | null>(null);
+  const [loading, setLoading]         = useState(false);
+
+  // Auto-login to obtain JWT token
+  useEffect(() => {
+    async function autoLogin() {
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "admin@cafe.com",
+            password: "Admin@123",
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.accessToken);
+        }
+      } catch (err) {
+        console.error("Categories auto-login error:", err);
+      }
+    }
+    autoLogin();
+  }, []);
+
+  const refreshData = async (jwt: string) => {
+    setLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${jwt}` };
+      const [catsRes, productsRes, reportRes] = await Promise.all([
+        fetch("http://localhost:3000/categories?limit=100", { headers }),
+        fetch("http://localhost:3000/products?limit=100", { headers }),
+        fetch("http://localhost:3000/reports/categories?startDate=2026-01-01&endDate=2026-12-31", { headers }),
+      ]);
+
+      if (catsRes.ok && productsRes.ok && reportRes.ok) {
+        const catsData = await catsRes.json();
+        const productsData = await productsRes.json();
+        const reportData = await reportRes.json();
+
+        const activeCats = catsData.data || [];
+        const activeProds = productsData.data || [];
+        const reportCats = reportData.categories || [];
+
+        const mapped: Category[] = activeCats.map((cat: any) => {
+          const productCount = activeProds.filter((p: any) => p.categoryId === cat.id).length;
+          const matchedReport = reportCats.find((c: any) => c.name.toLowerCase() === cat.name.toLowerCase());
+          const revenueValue = matchedReport ? matchedReport.revenue : 0;
+          
+          const date = new Date(cat.createdAt);
+          const formattedDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+          return {
+            id: cat.id,
+            name: cat.name,
+            color: cat.color || "#4A7C8A",
+            image: cat.imageUrl 
+              ? (cat.imageUrl.startsWith("http") ? cat.imageUrl : `http://localhost:3000${cat.imageUrl}`)
+              : null,
+            productCount,
+            revenue: `$${revenueValue.toLocaleString()}`,
+            createdAt: formattedDate,
+          };
+        });
+
+        setCategories(mapped);
+      }
+    } catch (err) {
+      console.error("Error fetching categories data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      refreshData(token);
+    }
+  }, [token]);
 
   // ── helpers ─────────────────────────────────────────────────────────────────
   const showToast = (msg: string) => {
@@ -46,22 +126,102 @@ export default function CategoriesPage() {
   const openEdit = (cat: Category) => { setEditTarget(cat); setModal("edit"); setViewTarget(null); };
   const closeModal = () => { setModal(null); setEditTarget(null); };
 
-  const handleSave = (data: { name: string; color: string; image: string | null }) => {
-    if (modal === "add") {
-      const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-      setCategories(prev => [...prev, { id: newId(), ...data, productCount: 0, revenue: "$0", createdAt: today }]);
-      showToast(`"${data.name}" category created`);
-    } else if (modal === "edit" && editTarget) {
-      setCategories(prev => prev.map(c => c.id === editTarget.id ? { ...c, ...data } : c));
-      showToast(`"${data.name}" updated`);
+  const handleSave = async (data: { name: string; color: string; image: string | null; imageFile: File | null }) => {
+    if (!token) return;
+    try {
+      let imageUrl = data.image ? (data.image.startsWith("http") ? data.image.replace("http://localhost:3000", "") : data.image) : null;
+
+      if (data.imageFile) {
+        const formData = new FormData();
+        formData.append("image", data.imageFile);
+
+        const uploadRes = await fetch("http://localhost:3000/categories/upload-image", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          imageUrl = uploadData.imageUrl;
+        } else {
+          console.error("Failed to upload category image");
+        }
+      }
+
+      if (modal === "add") {
+        const response = await fetch("http://localhost:3000/categories", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: data.name,
+            color: data.color,
+            imageUrl: imageUrl || undefined,
+          }),
+        });
+
+        if (response.ok) {
+          showToast(`"${data.name}" category created`);
+          refreshData(token);
+        } else {
+          const errData = await response.json();
+          showToast(`Error: ${errData.message || "Failed to create category"}`);
+        }
+      } else if (modal === "edit" && editTarget) {
+        const response = await fetch(`http://localhost:3000/categories/${editTarget.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: data.name,
+            color: data.color,
+            imageUrl: imageUrl,
+          }),
+        });
+
+        if (response.ok) {
+          showToast(`"${data.name}" updated`);
+          refreshData(token);
+        } else {
+          const errData = await response.json();
+          showToast(`Error: ${errData.message || "Failed to update category"}`);
+        }
+      }
+    } catch (err) {
+      console.error("Error saving category:", err);
+      showToast("Error saving category");
     }
     closeModal();
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-    setCategories(prev => prev.filter(c => c.id !== deleteTarget.id));
-    showToast(`"${deleteTarget.name}" deleted`);
+  const handleDelete = async () => {
+    if (!deleteTarget || !token) return;
+    try {
+      const response = await fetch(`http://localhost:3000/categories/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        showToast(`"${deleteTarget.name}" deleted`);
+        refreshData(token);
+      } else {
+        const errData = await response.json();
+        showToast(`Error: ${errData.message || "Failed to delete category"}`);
+      }
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      showToast("Error deleting category");
+    }
     setDeleteTarget(null);
   };
 

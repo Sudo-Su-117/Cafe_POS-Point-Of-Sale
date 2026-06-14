@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { ProductFilterDto } from '../dto/product-filter.dto';
+import { RecommendRequestDto } from '../dto/recommend-request.dto';
 
 @Injectable()
 export class ProductsService {
@@ -297,6 +298,254 @@ export class ProductsService {
           imageUrl: product.category.imageUrl,
         }
         : undefined,
+    };
+  }
+
+  async recommend(recommendDto: RecommendRequestDto) {
+    const productIdsOrNames = recommendDto.productIds || [];
+    if (productIdsOrNames.length === 0) {
+      return {
+        recommendedProductId: '',
+        recommendedProductName: '',
+        recommendedProductPrice: 0,
+        reason: '',
+      };
+    }
+
+    // Resolve products from the database (either by ID or name)
+    const dbProductsById = await this.prisma.product.findMany({
+      where: {
+        id: { in: productIdsOrNames },
+        isActive: true,
+      },
+    });
+
+    const dbProductsByName = await this.prisma.product.findMany({
+      where: {
+        name: { in: productIdsOrNames },
+        isActive: true,
+      },
+    });
+
+    const allResolvedProducts = [...dbProductsById, ...dbProductsByName];
+    const productMap = new Map(allResolvedProducts.map(p => [p.id, p]));
+    const resolvedProducts = Array.from(productMap.values());
+    const resolvedProductIds = resolvedProducts.map(p => p.id);
+    const resolvedProductNames = resolvedProducts.map(p => p.name);
+
+    if (resolvedProductIds.length === 0) {
+      // If we couldn't resolve any of the input items, look up the top products in the system to suggest something
+      const topProducts = await this.prisma.orderItem.groupBy({
+        by: ['productId'],
+        _sum: {
+          quantity: true,
+        },
+        where: {
+          order: {
+            status: 'COMPLETED',
+          },
+          product: {
+            isActive: true,
+          },
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      if (topProducts.length === 0) {
+        // Find any active product as absolute fallback
+        const fallbackProd = await this.prisma.product.findFirst({
+          where: { isActive: true },
+        });
+        if (!fallbackProd) {
+          return {
+            recommendedProductId: '',
+            recommendedProductName: '',
+            recommendedProductPrice: 0,
+            reason: '',
+          };
+        }
+        return {
+          recommendedProductId: fallbackProd.id,
+          recommendedProductName: fallbackProd.name,
+          recommendedProductPrice: Number(fallbackProd.price),
+          reason: `We highly recommend our fresh ${fallbackProd.name}!`,
+        };
+      }
+
+      // Fetch the details of the top seller
+      const topSeller = await this.prisma.product.findUnique({
+        where: { id: topProducts[0].productId },
+      });
+      if (!topSeller) {
+        return {
+          recommendedProductId: '',
+          recommendedProductName: '',
+          recommendedProductPrice: 0,
+          reason: '',
+        };
+      }
+      return {
+        recommendedProductId: topSeller.id,
+        recommendedProductName: topSeller.name,
+        recommendedProductPrice: Number(topSeller.price),
+        reason: `Try our best selling ${topSeller.name}!`,
+      };
+    }
+
+    // Find all completed orders that contain at least one of the resolved productIds
+    const matchingOrders = await this.prisma.order.findMany({
+      where: {
+        status: 'COMPLETED',
+        orderItems: {
+          some: {
+            productId: { in: resolvedProductIds },
+          },
+        },
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    // Compute co-occurrences of other products
+    const coOccurrenceCounts: { [productId: string]: { name: string; price: number; count: number } } = {};
+    for (const order of matchingOrders) {
+      for (const item of order.orderItems) {
+        if (!resolvedProductIds.includes(item.productId) && item.product.isActive) {
+          if (!coOccurrenceCounts[item.productId]) {
+            coOccurrenceCounts[item.productId] = {
+              name: item.product.name,
+              price: Number(item.product.price),
+              count: 0,
+            };
+          }
+          coOccurrenceCounts[item.productId].count += item.quantity;
+        }
+      }
+    }
+
+    let sortedCoOccurrences = Object.keys(coOccurrenceCounts)
+      .map(id => ({
+        id,
+        name: coOccurrenceCounts[id].name,
+        price: coOccurrenceCounts[id].price,
+        count: coOccurrenceCounts[id].count,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // If no direct co-occurrences were found, query top-selling products not in the cart
+    if (sortedCoOccurrences.length === 0) {
+      const topProducts = await this.prisma.orderItem.groupBy({
+        by: ['productId'],
+        _sum: {
+          quantity: true,
+        },
+        where: {
+          order: {
+            status: 'COMPLETED',
+          },
+          productId: {
+            notIn: resolvedProductIds,
+          },
+          product: {
+            isActive: true,
+          },
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      if (topProducts.length > 0) {
+        const topProductDetails = await this.prisma.product.findMany({
+          where: {
+            id: { in: topProducts.map(tp => tp.productId) },
+            isActive: true,
+          },
+        });
+        for (const p of topProductDetails) {
+          const sumObj = topProducts.find(tp => tp.productId === p.id);
+          sortedCoOccurrences.push({
+            id: p.id,
+            name: p.name,
+            price: Number(p.price),
+            count: sumObj?._sum?.quantity || 0,
+          });
+        }
+      }
+    }
+
+    // If still empty, add any active product not in the cart as fallback
+    if (sortedCoOccurrences.length === 0) {
+      const anyActiveProducts = await this.prisma.product.findMany({
+        where: {
+          id: { notIn: resolvedProductIds },
+          isActive: true,
+        },
+        take: 5,
+      });
+      for (const p of anyActiveProducts) {
+        sortedCoOccurrences.push({
+          id: p.id,
+          name: p.name,
+          price: Number(p.price),
+          count: 0,
+        });
+      }
+    }
+
+    if (sortedCoOccurrences.length === 0) {
+      return {
+        recommendedProductId: '',
+        recommendedProductName: '',
+        recommendedProductPrice: 0,
+        reason: '',
+      };
+    }
+
+    // Call Python AI Service
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    try {
+      const response = await globalThis.fetch(`${aiServiceUrl}/recommend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartItems: resolvedProductNames,
+          coOccurrences: sortedCoOccurrences.slice(0, 5),
+        }),
+      });
+
+      if (response.ok) {
+        const recommendation = await response.json();
+        return recommendation;
+      } else {
+        const errText = await response.text();
+        this.logger.error('AI Service /recommend returned error: ' + errText);
+      }
+    } catch (err) {
+      this.logger.error('Failed to connect to AI Service /recommend: ' + err.message);
+    }
+
+    // Fallback if AI Service is unreachable
+    const topCandidate = sortedCoOccurrences[0];
+    const cartStr = resolvedProductNames.join(', ');
+    return {
+      recommendedProductId: topCandidate.id,
+      recommendedProductName: topCandidate.name,
+      recommendedProductPrice: topCandidate.price,
+      reason: `People who buy ${cartStr} often buy ${topCandidate.name}.`,
     };
   }
 }

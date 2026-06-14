@@ -30,6 +30,24 @@ export class ReportsController {
     return this.reportsService.getRevenueReport(dateRange);
   }
 
+  @Get('categories')
+  @ApiOperation({ summary: 'Get categories sales breakdown report' })
+  async getCategoryReport(@Query() dateRange: DateRangeDto) {
+    return this.reportsService.getCategoryReport(dateRange);
+  }
+
+  @Get('revenue-trend')
+  @ApiOperation({ summary: 'Get revenue trend report' })
+  async getRevenueTrend(@Query() dateRange: DateRangeDto) {
+    return this.reportsService.getRevenueTrend(dateRange);
+  }
+
+  @Get('top-orders')
+  @ApiOperation({ summary: 'Get top orders report' })
+  async getTopOrdersReport(@Query() dateRange: DateRangeDto) {
+    return this.reportsService.getTopOrdersReport(dateRange);
+  }
+
   @Get('orders')
   @ApiOperation({ summary: 'Get orders report' })
   async getOrdersReport(@Query() dateRange: DateRangeDto) {

@@ -501,6 +501,105 @@ Your goal is to answer the cafe owner's questions accurately, professionally, an
         "source": "local-fallback",
         "reply": reply
     }
+class CoOccurrenceItem(BaseModel):
+    id: str
+    name: str
+    price: float
+    count: int
+
+class RecommendationRequest(BaseModel):
+    cartItems: List[str]
+    coOccurrences: List[CoOccurrenceItem]
+
+@app.post("/recommend")
+async def recommend_addon(req: RecommendationRequest):
+    if not req.coOccurrences:
+        return {
+            "recommendedProductId": "",
+            "recommendedProductName": "",
+            "recommendedProductPrice": 0.0,
+            "reason": ""
+        }
+    
+    top_item = req.coOccurrences[0]
+    cart_str = ", ".join(req.cartItems)
+    
+    prompt = f"""You are a sales and promotion assistant for a cafe.
+A customer has the following items in their shopping cart: {cart_str}.
+Based on historical transaction database logs, the most frequently bought co-occurring item is "{top_item.name}" (price: ${top_item.price:.2f}, bought together {top_item.count} times).
+
+Generate a single, short, catchy, one-sentence suggestion that the cashier can read to upsell this item (max 80 chars).
+Example: "People who buy Coffee often buy Brownie." or "Pair your Caffe Latte with a fresh Croissant!"
+
+Response format:
+Respond with ONLY the sentence. Do not add quotes, formatting, or greetings.
+"""
+
+    local_llm_url = os.getenv("LOCAL_LLM_URL")
+    local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+
+    upsell_sentence = f"People who buy {cart_str} often buy {top_item.name}."
+
+    if local_llm_url:
+        try:
+            base_url = local_llm_url.rstrip('/')
+            url = f"{base_url}/chat/completions"
+            headers = {"Content-Type": "application/json"}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": local_llm_model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7
+                }, timeout=10.0)
+                if response.status_code == 200:
+                    text = response.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                    if text:
+                        upsell_sentence = text.replace('"', '')
+        except Exception as e:
+            print(f"Local LLM recommendation error: {e}")
+
+    if gemini_key and upsell_sentence == f"People who buy {cart_str} often buy {top_item.name}.":
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json={
+                    "contents": [{"parts": [{"text": prompt}]}]
+                }, timeout=10.0)
+                if response.status_code == 200:
+                    text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                    if text:
+                        upsell_sentence = text.replace('"', '')
+        except Exception as e:
+            print(f"Gemini recommendation error: {e}")
+
+    if openai_key and upsell_sentence == f"People who buy {cart_str} often buy {top_item.name}.":
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {openai_key}"
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json={
+                    "model": "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7
+                }, timeout=10.0)
+                if response.status_code == 200:
+                    text = response.json().get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                    if text:
+                        upsell_sentence = text.replace('"', '')
+        except Exception as e:
+            print(f"OpenAI recommendation error: {e}")
+
+    return {
+        "recommendedProductId": top_item.id,
+        "recommendedProductName": top_item.name,
+        "recommendedProductPrice": top_item.price,
+        "reason": upsell_sentence
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Plus, LayoutGrid, List, Search, Users, ShieldCheck, UserCheck, Archive } from "lucide-react";
 import { User } from "@/features/users/components/types";
 import { UserTable } from "@/features/users/components/UserTable";
@@ -8,14 +8,7 @@ import { UserCard } from "@/features/users/components/UserCard";
 import { UserModal } from "@/features/users/components/UserModal";
 import { StatCard } from "@/features/dashboard/components/StatCard";
 
-// ── Seed data ─────────────────────────────────────────────────────────────────
-const SEED_USERS: User[] = [
-  { id: "u1", name: "Jamie Sullivan", email: "jamie@brewhouse.co",  role: "Employee", status: "Active",   joinedAt: "Jan 10, 2026", avatarColor: "#C9783A" },
-  { id: "u2", name: "Priya Ramesh",   email: "priya@brewhouse.co",  role: "Employee", status: "Active",   joinedAt: "Jan 15, 2026", avatarColor: "#5B8FA8" },
-  { id: "u3", name: "Marcus Torres",  email: "marcus@brewhouse.co", role: "Employee", status: "Active",   joinedAt: "Feb 3, 2026",  avatarColor: "#789658" },
-  { id: "u4", name: "Olivia Chen",    email: "olivia@brewhouse.co", role: "Admin",    status: "Active",   joinedAt: "Jan 1, 2026",  avatarColor: "#866443" },
-  { id: "u5", name: "Dan Park",       email: "dan@brewhouse.co",    role: "Employee", status: "Archived", joinedAt: "Feb 20, 2026", avatarColor: "#9B6A9B" },
-];
+const AVATAR_COLORS = ["#C9783A", "#5B8FA8", "#789658", "#866443", "#9B6A9B", "#6B8E7B", "#A67B5B", "#7B9EA8"];
 
 type ViewMode = "list" | "grid";
 type ModalState =
@@ -25,49 +18,176 @@ type ModalState =
   | { kind: "password"; user: User }
   | null;
 
-let idCtr = 10;
-const newId = () => `u${idCtr++}`;
-
 export default function UsersPage() {
-  const [users,   setUsers]   = useState<User[]>(SEED_USERS);
+  const [users,   setUsers]   = useState<User[]>([]);
   const [view,    setView]    = useState<ViewMode>("list");
   const [search,  setSearch]  = useState("");
   const [roleFilter, setRoleFilter] = useState<"All" | "Admin" | "Employee">("All");
   const [modal,   setModal]   = useState<ModalState>(null);
   const [toast,   setToast]   = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   // ── helpers ──────────────────────────────────────────────────────────────────
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2800); };
 
-  const handleSave = (data: Omit<User, "id"> & { password?: string }) => {
-    // Strip password — it's not stored on the User object
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _pw, ...userData } = data;
+  // Auto-login
+  useEffect(() => {
+    async function autoLogin() {
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "admin@cafe.com", password: "Admin@123" }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.accessToken);
+        }
+      } catch (err) {
+        console.error("Users page auto-login error:", err);
+      }
+    }
+    autoLogin();
+  }, []);
+
+  // Fetch users from backend
+  const fetchUsers = async (jwt: string) => {
+    try {
+      const res = await fetch("http://localhost:3000/users", {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const mapped: User[] = data.map((u: any, idx: number) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role === "ADMIN" ? "Admin" : "Employee",
+          status: u.status === "ACTIVE" ? "Active" : "Archived",
+          joinedAt: new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          avatarColor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+        }));
+        setUsers(mapped);
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchUsers(token);
+  }, [token]);
+
+  const handleSave = async (data: Omit<User, "id"> & { password?: string }) => {
+    if (!token) return;
+    const { password, ...userData } = data;
+
     if (modal?.kind === "add") {
-      setUsers(prev => [...prev, { id: newId(), ...userData }]);
-      showToast(`${userData.name} added`);
+      try {
+        const res = await fetch("http://localhost:3000/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: userData.name,
+            email: userData.email,
+            password: password || "Password@123",
+            role: userData.role === "Admin" ? "ADMIN" : "EMPLOYEE",
+          }),
+        });
+        if (res.ok) {
+          fetchUsers(token);
+          showToast(`${userData.name} added`);
+        } else {
+          const err = await res.json();
+          alert(`Error creating user: ${err.message || "Failed"}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     } else if (modal?.kind === "edit") {
-      setUsers(prev => prev.map(u => u.id === modal.user.id ? { ...u, ...userData } : u));
-      showToast(`${userData.name} updated`);
+      try {
+        const res = await fetch(`http://localhost:3000/users/${modal.user.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: userData.name,
+            email: userData.email,
+            role: userData.role === "Admin" ? "ADMIN" : "EMPLOYEE",
+          }),
+        });
+        if (res.ok) {
+          fetchUsers(token);
+          showToast(`${userData.name} updated`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     } else if (modal?.kind === "password") {
-      showToast(`Password updated for ${modal.user.name}`);
+      try {
+        const res = await fetch(`http://localhost:3000/users/${modal.user.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            password: password,
+          }),
+        });
+        if (res.ok) {
+          showToast(`Password updated for ${modal.user.name}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
     setModal(null);
   };
 
-  const handleArchive = (id: string) => {
-    setUsers(prev => prev.map(u => u.id === id
-      ? { ...u, status: u.status === "Active" ? "Archived" : "Active" }
-      : u));
+  const handleArchive = async (id: string) => {
+    if (!token) return;
     const u = users.find(x => x.id === id);
-    showToast(u ? `${u.name} ${u.status === "Active" ? "archived" : "restored"}` : "");
+    if (!u) return;
+    const newStatus = u.status === "Active" ? "ARCHIVED" : "ACTIVE";
+    try {
+      const res = await fetch(`http://localhost:3000/users/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        fetchUsers(token);
+        showToast(`${u.name} ${u.status === "Active" ? "archived" : "restored"}`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-    setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-    showToast(`${deleteTarget.name} deleted`);
+  const handleDelete = async () => {
+    if (!deleteTarget || !token) return;
+    try {
+      const res = await fetch(`http://localhost:3000/users/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        fetchUsers(token);
+        showToast(`${deleteTarget.name} deleted`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
     setDeleteTarget(null);
   };
 

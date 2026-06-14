@@ -29,7 +29,7 @@ export class PromotionsService {
       data: {
         name: createPromotionDto.name,
         description: createPromotionDto.description,
-        type: String(createPromotionDto.type) as any,
+        type: String(createPromotionDto.type).toUpperCase() as any,
         value: createPromotionDto.value,
         startDate: createPromotionDto.startDate,
         endDate: createPromotionDto.endDate,
@@ -49,7 +49,8 @@ export class PromotionsService {
     if (updatePromotionDto.name) dataToUpdate.name = updatePromotionDto.name;
     if (updatePromotionDto.description)
       dataToUpdate.description = updatePromotionDto.description;
-    if (updatePromotionDto.type) dataToUpdate.type = updatePromotionDto.type;
+    if (updatePromotionDto.type)
+      dataToUpdate.type = String(updatePromotionDto.type).toUpperCase() as any;
     if (updatePromotionDto.value !== undefined)
       dataToUpdate.value = updatePromotionDto.value;
     if (updatePromotionDto.startDate)
@@ -77,7 +78,11 @@ export class PromotionsService {
     });
   }
 
-  async generateAIPromotion() {
+  async generateAIPromotion(exclude?: string) {
+    const excludeList = exclude
+      ? exclude.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+      : [];
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -106,8 +111,20 @@ export class PromotionsService {
       salesMap.set(item.productId, (salesMap.get(item.productId) || 0) + item.quantity);
     }
 
-    // 4. Map products to the format expected by the AI service
-    const aiProductsPayload = products.map((p) => ({
+    // 4. Map products to the format expected by the AI service, excluding past generation matches
+    let filteredProducts = products;
+    if (excludeList.length > 0) {
+      filteredProducts = products.filter((p) => {
+        const pName = p.name.toLowerCase();
+        return !excludeList.some((ex) => pName.includes(ex) || ex.includes(pName));
+      });
+    }
+
+    if (filteredProducts.length === 0) {
+      filteredProducts = products;
+    }
+
+    const aiProductsPayload = filteredProducts.map((p) => ({
       id: p.id,
       name: p.name,
       price: Number(p.price),

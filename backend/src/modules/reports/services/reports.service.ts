@@ -9,31 +9,58 @@ export class ReportsService {
 
   async getSalesReport(dateRange: DateRangeDto) {
     const { startDate, endDate } = this._parseDateRange(dateRange);
+    const duration = endDate.getTime() - startDate.getTime();
+    const prevStartDate = new Date(startDate.getTime() - duration);
+    const prevEndDate = startDate;
 
-    const orders = await this.prisma.order.findMany({
+    const currentOrders = await this.prisma.order.findMany({
       where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        createdAt: { gte: startDate, lte: endDate },
+        status: { in: ['COMPLETED', 'PAID'] },
       },
-      include: { items: true, payment: true },
+      include: { orderItems: true },
     });
 
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => {
-      const orderTotal = order.items.reduce(
-        (itemSum, item) => itemSum + item.unitPrice * item.quantity,
-        0,
-      );
-      return sum + orderTotal;
-    }, 0);
+    const prevOrders = await this.prisma.order.findMany({
+      where: {
+        createdAt: { gte: prevStartDate, lt: prevEndDate },
+        status: { in: ['COMPLETED', 'PAID'] },
+      },
+      include: { orderItems: true },
+    });
+
+    const getStats = (ordersList: any[]) => {
+      const totalOrders = ordersList.length;
+      const totalRevenue = ordersList.reduce((sum, order) => {
+        return sum + Number(order.grandTotal);
+      }, 0);
+      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      
+      const uniqueCustomerIds = new Set(ordersList.map(o => o.customerId).filter(Boolean));
+      const guestOrdersCount = ordersList.filter(o => !o.customerId).length;
+      const uniqueCustomers = uniqueCustomerIds.size + guestOrdersCount;
+
+      return { totalOrders, totalRevenue, averageOrderValue, uniqueCustomers };
+    };
+
+    const currentStats = getStats(currentOrders);
+    const prevStats = getStats(prevOrders);
+
+    const getGrowth = (curr: number, prev: number) => {
+      if (prev === 0) return curr > 0 ? 100 : 0;
+      return ((curr - prev) / prev) * 100;
+    };
 
     return {
       period: { startDate, endDate },
-      totalOrders,
-      totalRevenue,
-      averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      totalRevenue: currentStats.totalRevenue,
+      revenueGrowth: getGrowth(currentStats.totalRevenue, prevStats.totalRevenue),
+      totalOrders: currentStats.totalOrders,
+      ordersGrowth: getGrowth(currentStats.totalOrders, prevStats.totalOrders),
+      averageOrderValue: currentStats.averageOrderValue,
+      aovGrowth: getGrowth(currentStats.averageOrderValue, prevStats.averageOrderValue),
+      uniqueCustomers: currentStats.uniqueCustomers,
+      customersGrowth: getGrowth(currentStats.uniqueCustomers, prevStats.uniqueCustomers),
     };
   }
 
@@ -49,20 +76,25 @@ export class ReportsService {
           },
         },
       },
-      include: { product: true },
+      include: {
+        product: {
+          include: { category: true }
+        }
+      },
     });
 
     const productSales = items.reduce((acc, item) => {
       const existing = acc.find((p) => p.productId === item.productId);
       if (existing) {
         existing.quantity += item.quantity;
-        existing.revenue += item.unitPrice * item.quantity;
+        existing.revenue += Number(item.unitPriceSnapshot) * item.quantity;
       } else {
         acc.push({
           productId: item.productId,
           productName: item.product.name,
+          categoryName: item.product.category?.name || 'Uncategorized',
           quantity: item.quantity,
-          revenue: item.unitPrice * item.quantity,
+          revenue: Number(item.unitPriceSnapshot) * item.quantity,
         });
       }
       return acc;
@@ -138,12 +170,22 @@ export class ReportsService {
   }
 
   private _parseDateRange(dateRange: DateRangeDto) {
-    const startDate = dateRange.startDate
-      ? new Date(dateRange.startDate)
-      : this._getStartOfDay(new Date());
-    const endDate = dateRange.endDate
-      ? new Date(dateRange.endDate)
-      : this._getEndOfDay(new Date());
+    let startDate: Date;
+    let endDate: Date;
+
+    if (dateRange.startDate) {
+      startDate = new Date(dateRange.startDate);
+      startDate.setUTCHours(0, 0, 0, 0);
+    } else {
+      startDate = this._getStartOfDay(new Date());
+    }
+
+    if (dateRange.endDate) {
+      endDate = new Date(dateRange.endDate);
+      endDate.setUTCHours(23, 59, 59, 999);
+    } else {
+      endDate = this._getEndOfDay(new Date());
+    }
 
     return { startDate, endDate };
   }
@@ -158,6 +200,161 @@ export class ReportsService {
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
     return end;
+  }
+
+  async getCategoryReport(dateRange: DateRangeDto) {
+    const { startDate, endDate } = this._parseDateRange(dateRange);
+
+    const items = await this.prisma.orderItem.findMany({
+      where: {
+        order: {
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+          status: { in: ['COMPLETED', 'PAID'] },
+        },
+      },
+      include: {
+        product: {
+          include: { category: true },
+        },
+      },
+    });
+
+    const categoryMap = new Map<string, { orders: Set<string>; revenue: number }>();
+    let totalRevenue = 0;
+
+    for (const item of items) {
+      const catName = item.product.category?.name || 'Uncategorized';
+      const price = Number(item.unitPriceSnapshot);
+      const qty = item.quantity;
+      const rev = price * qty;
+      totalRevenue += rev;
+
+      if (!categoryMap.has(catName)) {
+        categoryMap.set(catName, { orders: new Set([item.orderId]), revenue: 0 });
+      }
+      const entry = categoryMap.get(catName)!;
+      entry.orders.add(item.orderId);
+      entry.revenue += rev;
+    }
+
+    const categoriesReport = Array.from(categoryMap.entries()).map(([name, entry]) => ({
+      name,
+      orders: entry.orders.size,
+      revenue: entry.revenue,
+      pct: totalRevenue > 0 ? Math.round((entry.revenue / totalRevenue) * 100) : 0,
+    }));
+
+    return {
+      categories: categoriesReport.sort((a, b) => b.revenue - a.revenue),
+      totalRevenue,
+      totalOrders: new Set(items.map((i) => i.orderId)).size,
+    };
+  }
+
+  async getRevenueTrend(dateRange: DateRangeDto) {
+    const { startDate, endDate } = this._parseDateRange(dateRange);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: { in: ['COMPLETED', 'PAID'] },
+      },
+      include: { orderItems: true },
+    });
+
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    const isSingleDay = timeDiff <= 24 * 60 * 60 * 1000 + 1000;
+
+    const trendMap = new Map<string, { label: string; revenue: number; orders: number; key: number }>();
+
+    if (isSingleDay) {
+      for (let h = 0; h < 24; h++) {
+        const label = h === 0 ? '12 AM' : h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`;
+        trendMap.set(h.toString(), { label, revenue: 0, orders: 0, key: h });
+      }
+
+      for (const order of orders) {
+        const hour = order.createdAt.getHours();
+        const entry = trendMap.get(hour.toString());
+        if (entry) {
+          entry.revenue += Number(order.grandTotal);
+          entry.orders += 1;
+        }
+      }
+    } else {
+      const cur = new Date(startDate);
+      const end = new Date(endDate);
+      const formatLabel = (d: Date) => {
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+
+      let daysCount = 0;
+      while (cur <= end && daysCount < 100) {
+        const dayKey = cur.toISOString().split('T')[0];
+        trendMap.set(dayKey, { label: formatLabel(cur), revenue: 0, orders: 0, key: cur.getTime() });
+        cur.setDate(cur.getDate() + 1);
+        daysCount++;
+      }
+
+      for (const order of orders) {
+        const dayKey = order.createdAt.toISOString().split('T')[0];
+        const entry = trendMap.get(dayKey);
+        if (entry) {
+          entry.revenue += Number(order.grandTotal);
+          entry.orders += 1;
+        }
+      }
+    }
+
+    const trend = Array.from(trendMap.values()).sort((a, b) => a.key - b.key);
+    return trend;
+  }
+
+  async getTopOrdersReport(dateRange: DateRangeDto) {
+    const { startDate, endDate } = this._parseDateRange(dateRange);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: { in: ['COMPLETED', 'PAID', 'CANCELLED'] },
+      },
+      include: {
+        customer: true,
+        table: true,
+        orderItems: true,
+      },
+      orderBy: {
+        grandTotal: 'desc',
+      },
+      take: 10,
+    });
+
+    return orders.map((o) => {
+      const totalItems = o.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      let status: 'Paid' | 'Draft' | 'Cancelled' = 'Paid';
+      if (o.status === 'CANCELLED') status = 'Cancelled';
+      else if (o.paidAt !== null) status = 'Paid';
+      else if (o.status === 'DRAFT' || o.status === 'SENT_TO_KITCHEN' || o.status === 'PREPARING') status = 'Draft';
+
+      return {
+        id: `#${o.orderNumber || o.id.slice(0, 4)}`,
+        customer: o.customer?.name || 'Walk-in',
+        table: o.table?.tableNumber || `Table ${o.tableId.slice(0, 3)}`,
+        items: totalItems,
+        amount: Number(o.grandTotal),
+        status,
+        date: o.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      };
+    });
   }
 
   async getAIInsights(dateRange?: DateRangeDto) {
@@ -197,11 +394,11 @@ export class ReportsService {
     const currentOrders = await this.prisma.order.findMany({
       where: {
         createdAt: { gte: currentStart, lte: currentEnd },
-        status: 'COMPLETED',
+        status: { in: ['COMPLETED', 'PAID'] },
       },
       include: {
-        items: { include: { product: { include: { category: true } } } },
-        payment: true,
+        orderItems: { include: { product: { include: { category: true } } } },
+        payments: true,
       },
     });
 
@@ -209,11 +406,11 @@ export class ReportsService {
     const prevOrders = await this.prisma.order.findMany({
       where: {
         createdAt: { gte: prevStart, lt: prevEnd },
-        status: 'COMPLETED',
+        status: { in: ['COMPLETED', 'PAID'] },
       },
       include: {
-        items: { include: { product: true } },
-        payment: true,
+        orderItems: { include: { product: true } },
+        payments: true,
       },
     });
 
@@ -223,11 +420,11 @@ export class ReportsService {
     });
 
     const currentRevenue = currentOrders.reduce(
-      (sum, o) => sum + (o.payment?.amount || 0),
+      (sum, o) => sum + (o.payments[0]?.amount || 0),
       0,
     );
     const prevRevenue = prevOrders.reduce(
-      (sum, o) => sum + (o.payment?.amount || 0),
+      (sum, o) => sum + (o.payments[0]?.amount || 0),
       0,
     );
 
@@ -242,7 +439,7 @@ export class ReportsService {
     const prevProductSales: { [key: string]: number } = {};
 
     for (const o of currentOrders) {
-      for (const item of o.items) {
+      for (const item of o.orderItems) {
         if (!currentProductSales[item.productId]) {
           currentProductSales[item.productId] = {
             name: item.product.name,
@@ -252,12 +449,12 @@ export class ReportsService {
         }
         currentProductSales[item.productId].qty += item.quantity;
         currentProductSales[item.productId].revenue +=
-          item.unitPrice * item.quantity;
+          Number(item.unitPriceSnapshot) * item.quantity;
       }
     }
 
     for (const o of prevOrders) {
-      for (const item of o.items) {
+      for (const item of o.orderItems) {
         prevProductSales[item.productId] =
           (prevProductSales[item.productId] || 0) + item.quantity;
       }
@@ -269,10 +466,10 @@ export class ReportsService {
 
     const categorySales: { [key: string]: number } = {};
     for (const o of currentOrders) {
-      for (const item of o.items) {
+      for (const item of o.orderItems) {
         const catName = item.product.category?.name || 'Uncategorized';
         categorySales[catName] =
-          (categorySales[catName] || 0) + item.unitPrice * item.quantity;
+          (categorySales[catName] || 0) + Number(item.unitPriceSnapshot) * item.quantity;
       }
     }
 
@@ -292,14 +489,14 @@ export class ReportsService {
       .sort((a, b) => b.revenue - a.revenue);
 
     const tableSales: { [key: string]: number } = {};
-    const allTables = await this.prisma.table.findMany();
-    const tableNameMap = new Map(allTables.map((t) => [t.id, t.name]));
+    const allTables = await this.prisma.restaurantTable.findMany();
+    const tableNameMap = new Map(allTables.map((t) => [t.id, t.tableNumber]));
 
     for (const o of currentOrders) {
       if (o.tableId) {
         const tableName = tableNameMap.get(o.tableId) || `Table ${o.tableId}`;
-        const orderTotal = o.items.reduce(
-          (sum, item) => sum + item.unitPrice * item.quantity,
+        const orderTotal = o.orderItems.reduce(
+          (sum, item) => sum + Number(item.unitPriceSnapshot) * item.quantity,
           0,
         );
         tableSales[tableName] = (tableSales[tableName] || 0) + orderTotal;
@@ -419,13 +616,13 @@ export class ReportsService {
       where: {
         order: {
           createdAt: { gte: thirtyDaysAgo },
-          status: 'COMPLETED',
+          status: { in: ['COMPLETED', 'PAID'] },
         },
       },
       select: {
         productId: true,
         quantity: true,
-        unitPrice: true,
+        unitPriceSnapshot: true,
       },
     });
 
@@ -433,7 +630,7 @@ export class ReportsService {
     const salesRevMap = new Map<string, number>();
     for (const item of orderItems) {
       salesQtyMap.set(item.productId, (salesQtyMap.get(item.productId) || 0) + item.quantity);
-      salesRevMap.set(item.productId, (salesRevMap.get(item.productId) || 0) + item.quantity * item.unitPrice);
+      salesRevMap.set(item.productId, (salesRevMap.get(item.productId) || 0) + item.quantity * Number(item.unitPriceSnapshot));
     }
 
     // Sort products by sales volume
@@ -450,15 +647,15 @@ export class ReportsService {
 
     // 3. Table Performance
     const orders = await this.prisma.order.findMany({
-      where: { status: 'COMPLETED' },
-      include: { items: true, table: true },
+      where: { status: { in: ['COMPLETED', 'PAID'] } },
+      include: { orderItems: true, table: true },
     });
 
     const tableSales: { [key: string]: number } = {};
     for (const o of orders) {
       if (o.table) {
-        const total = o.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-        tableSales[o.table.name] = (tableSales[o.table.name] || 0) + total;
+        const total = o.orderItems.reduce((sum, i) => sum + Number(i.unitPriceSnapshot) * i.quantity, 0);
+        tableSales[o.table.tableNumber] = (tableSales[o.table.tableNumber] || 0) + total;
       }
     }
     const sortedTables = Object.entries(tableSales)
@@ -471,21 +668,21 @@ export class ReportsService {
     });
 
     const sessionCounts = await this.prisma.session.groupBy({
-      by: ['userId'],
+      by: ['openedByUserId'],
       _count: {
         id: true,
       },
       where: {
-        status: 'closed',
+        status: 'CLOSED',
       },
     });
 
-    const sessionMap = new Map(sessionCounts.map((s) => [s.userId || '', s._count.id]));
+    const sessionMap = new Map(sessionCounts.map((s) => [s.openedByUserId || '', s._count?.id || 0]));
 
     // 5. Total Store Metrics
     const totalOrdersCount = orders.length;
     const totalStoreRevenue = orders.reduce((sum, o) => {
-      return sum + o.items.reduce((itemSum, i) => itemSum + i.unitPrice * i.quantity, 0);
+      return sum + o.orderItems.reduce((itemSum, i) => itemSum + Number(i.unitPriceSnapshot) * i.quantity, 0);
     }, 0);
 
     // 6. Build the Context Markdown

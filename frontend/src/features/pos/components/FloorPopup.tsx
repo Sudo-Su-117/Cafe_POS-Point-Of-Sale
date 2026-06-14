@@ -4,42 +4,40 @@ import React from "react";
 import { X, Users } from "lucide-react";
 
 interface Table {
-  id: number;
+  id: string;
   number: string;
   seats: number;
   hasOrder: boolean;
+  status: string;
 }
 
-const floors = [
-  {
-    name: "Ground Floor",
-    tables: [
-      { id: 1, number: "T1", seats: 2, hasOrder: false },
-      { id: 2, number: "T2", seats: 4, hasOrder: true },
-      { id: 3, number: "T3", seats: 4, hasOrder: false },
-      { id: 4, number: "T4", seats: 2, hasOrder: true },
-      { id: 5, number: "T5", seats: 6, hasOrder: false },
-      { id: 6, number: "T6", seats: 4, hasOrder: false },
-      { id: 7, number: "Bar", seats: 8, hasOrder: true },
-    ],
-  },
-  {
-    name: "First Floor",
-    tables: [
-      { id: 8,  number: "T8",  seats: 4, hasOrder: false },
-      { id: 9,  number: "T9",  seats: 4, hasOrder: false },
-      { id: 10, number: "T10", seats: 2, hasOrder: true  },
-      { id: 11, number: "T11", seats: 6, hasOrder: false },
-    ],
-  },
-];
-
 interface FloorPopupProps {
+  tables: any[];
   onClose: () => void;
   onSelectTable: (table: Table) => void;
 }
 
-export function FloorPopup({ onClose, onSelectTable }: FloorPopupProps) {
+export function FloorPopup({ tables, onClose, onSelectTable }: FloorPopupProps) {
+  const floors = React.useMemo(() => {
+    const floorMap: Record<string, Table[]> = {};
+    tables.forEach(t => {
+      const floorName = t.floor?.name || "Other Floor";
+      if (!floorMap[floorName]) {
+        floorMap[floorName] = [];
+      }
+      floorMap[floorName].push({
+        id: t.id,
+        number: t.tableNumber,
+        seats: t.seats,
+        hasOrder: t.status !== "AVAILABLE",
+        status: t.status
+      });
+    });
+    return Object.entries(floorMap).map(([name, tbls]) => ({
+      name,
+      tables: tbls.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' }))
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [tables]);
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-surface border border-border-custom rounded-[22px] w-full max-w-[640px] max-h-[85vh] overflow-y-auto shadow-2xl theme-transition">

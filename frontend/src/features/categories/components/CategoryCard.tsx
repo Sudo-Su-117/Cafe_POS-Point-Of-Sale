@@ -21,7 +21,7 @@ export function CategoryCard({ category, onEdit, onDelete, onView }: CategoryCar
       className="bg-surface border border-border-custom rounded-[20px] overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-primary transition-all duration-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] group relative cursor-pointer theme-transition"
     >
       {/* Image or color band */}
-      {category.image ? (
+      {category.image && typeof category.image === "string" && category.image.trim() !== "" ? (
         <div className="relative h-[100px] w-full overflow-hidden">
           <Image src={category.image} alt={category.name} fill className="object-cover" unoptimized />
           {/* Gradient overlay so badge stays readable */}
