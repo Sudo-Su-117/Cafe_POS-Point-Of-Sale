@@ -33,7 +33,7 @@ export function ProductAvatar({ image, name, categoryColor, size = 44, fontSize 
   const letter = name.trim() ? name.trim()[0].toUpperCase() : "?";
   const bg = letterAvatarBg(name, categoryColor);
 
-  if (image) {
+  if (image && typeof image === "string" && image.trim() !== "") {
     // External URL (Unsplash etc.) or base64 upload
     return (
       <div

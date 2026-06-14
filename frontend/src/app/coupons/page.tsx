@@ -17,8 +17,8 @@ import { PromotionModal } from "@/features/marketing/components/PromotionModal";
 
 export default function CouponsPage() {
   const [activeTab, setActiveTab] = useState<MarketingTab>("coupons");
-  const [coupons, setCoupons] = useState(INITIAL_COUPONS);
-  const [promotions, setPromotions] = useState(INITIAL_PROMOTIONS);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [promotions, setPromotions] = useState<any[]>([]);
   const [couponModalOpen, setCouponModalOpen] = useState(false);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
@@ -60,6 +60,48 @@ export default function CouponsPage() {
     autoLogin();
   }, []);
 
+  const fetchCouponsAndPromotions = async (jwt: string) => {
+    const headers = { Authorization: `Bearer ${jwt}` };
+    try {
+      const [couponsRes, promotionsRes] = await Promise.all([
+        fetch("http://localhost:3000/coupons", { headers }),
+        fetch("http://localhost:3000/promotions", { headers }),
+      ]);
+      if (couponsRes.ok) {
+        const data = await couponsRes.json();
+        const mappedCoupons = data.map((c: any) => ({
+          id: c.id,
+          code: c.code,
+          discountType: "percentage",
+          value: Number(c.discountPercentage),
+          active: new Date(c.expiryDate) > new Date() && c.currentUsageCount < c.maxUsageCount,
+        }));
+        setCoupons(mappedCoupons);
+      }
+      if (promotionsRes.ok) {
+        const data = await promotionsRes.json();
+        const mappedPromotions = data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          scope: "order",
+          triggerType: "min_amount",
+          triggerValue: 0,
+          discountType: String(p.type).toLowerCase() === "percentage" ? "percentage" : "fixed_amount",
+          discountValue: Number(p.value),
+        }));
+        setPromotions(mappedPromotions);
+      }
+    } catch (err) {
+      console.error("Error fetching coupons/promotions:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchCouponsAndPromotions(token);
+    }
+  }, [token]);
+
   const handleAiClick = async () => {
     if (!token) {
       alert("Authenticating with backend server... Please try again in a moment.");
@@ -94,21 +136,71 @@ export default function CouponsPage() {
     }
   };
 
-  const handleToggleActive = (id: string) => {
-    setCoupons((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
-    );
-  };
+  const handleToggleActive = async (id: string) => {
+    if (!token) return;
+    const coupon = coupons.find((c) => c.id === id);
+    if (!coupon) return;
+    const newActive = !coupon.active;
+    const newExpiryDate = newActive
+      ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      : new Date("1970-01-01").toISOString();
 
-  const handleDeleteCoupon = (id: string) => {
-    if (confirm("Are you sure you want to delete this coupon?")) {
-      setCoupons((prev) => prev.filter((c) => c.id !== id));
+    try {
+      const response = await fetch(`http://localhost:3000/coupons/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          expiryDate: newExpiryDate,
+        }),
+      });
+      if (response.ok) {
+        setCoupons((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, active: newActive } : c))
+        );
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleDeletePromotion = (id: string) => {
+  const handleDeleteCoupon = async (id: string) => {
+    if (!token) return;
+    if (confirm("Are you sure you want to delete this coupon?")) {
+      try {
+        const response = await fetch(`http://localhost:3000/coupons/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          setCoupons((prev) => prev.filter((c) => c.id !== id));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleDeletePromotion = async (id: string) => {
+    if (!token) return;
     if (confirm("Are you sure you want to delete this promotion?")) {
-      setPromotions((prev) => prev.filter((p) => p.id !== id));
+      try {
+        const response = await fetch(`http://localhost:3000/promotions/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          setPromotions((prev) => prev.filter((p) => p.id !== id));
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -131,37 +223,71 @@ export default function CouponsPage() {
     setEditingPromotion(null);
   };
 
-  const handleSaveCoupon = (data: CouponFormData) => {
-    if (data.id) {
-      setCoupons((prev) =>
-        prev.map((c) => (c.id === data.id ? { ...c, ...data, id: c.id } : c))
-      );
-    } else {
-      setCoupons((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Math.random().toString(36).substring(2, 9),
+  const handleSaveCoupon = async (data: CouponFormData) => {
+    if (!token) return;
+    try {
+      const isEdit = !!data.id;
+      const url = isEdit ? `http://localhost:3000/coupons/${data.id}` : "http://localhost:3000/coupons";
+      const method = isEdit ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      ]);
+        body: JSON.stringify({
+          code: data.code,
+          description: `Discount coupon for ${data.code}`,
+          discountPercentage: data.value,
+          expiryDate: data.active
+            ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date("1970-01-01").toISOString(),
+          maxUsageCount: 1000,
+        }),
+      });
+      if (response.ok) {
+        fetchCouponsAndPromotions(token);
+        setCouponModalOpen(false);
+      } else {
+        const err = await response.json();
+        alert(`Error saving coupon: ${err.message || "Failed"}`);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleSavePromotion = (data: PromotionFormData) => {
-    if (data.id) {
-      setPromotions((prev) =>
-        prev.map((p) =>
-          p.id === data.id ? { ...data, id: p.id } : p
-        )
-      );
-    } else {
-      setPromotions((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: Math.random().toString(36).substring(2, 9),
+  const handleSavePromotion = async (data: PromotionFormData) => {
+    if (!token) return;
+    try {
+      const isEdit = !!data.id;
+      const url = isEdit ? `http://localhost:3000/promotions/${data.id}` : "http://localhost:3000/promotions";
+      const method = isEdit ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      ]);
+        body: JSON.stringify({
+          name: data.name,
+          description: `Promotion: ${data.name}`,
+          type: data.discountType === "percentage" ? "PERCENTAGE" : "FIXED_AMOUNT",
+          value: data.discountValue,
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          isActive: true,
+        }),
+      });
+      if (response.ok) {
+        fetchCouponsAndPromotions(token);
+        handleClosePromotionModal();
+      } else {
+        const err = await response.json();
+        alert(`Error saving promotion: ${err.message || "Failed"}`);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -292,18 +418,7 @@ export default function CouponsPage() {
                       });
 
                       if (response.ok) {
-                        setPromotions(prev => [
-                          ...prev,
-                          {
-                            id: Math.random().toString(36).substring(2, 9),
-                            name: aiRecommendation.name,
-                            scope: "product",
-                            triggerType: "min_qty",
-                            triggerValue: 2,
-                            discountType: aiRecommendation.type === "percentage" ? "percentage" : "fixed_amount",
-                            discountValue: aiRecommendation.value
-                          }
-                        ]);
+                        fetchCouponsAndPromotions(token);
                         setAiRecommendation(null);
                       } else {
                         const errData = await response.json();

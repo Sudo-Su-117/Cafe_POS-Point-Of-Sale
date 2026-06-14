@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { Minus, Plus, Trash2, Tag, Send, ChefHat, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Minus, Plus, Trash2, Tag, Send, ChefHat, Sparkles, Loader2 } from "lucide-react";
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -13,10 +13,11 @@ export interface CartItem {
 
 interface CartProps {
   items: CartItem[];
-  onUpdateQty: (id: number, delta: number) => void;
-  onRemove: (id: number) => void;
+  onUpdateQty: (id: string, delta: number) => void;
+  onRemove: (id: string) => void;
   onSendToKitchen: () => void;
   onCheckout: () => void;
+  token?: string | null;
   recommendation?: {
     recommendedProductId: string;
     recommendedProductName: string;
@@ -24,41 +25,99 @@ interface CartProps {
     reason: string;
   } | null;
   onAddRecommendation?: () => void;
+  appliedCoupon: { code: string; value: number; minOrderAmount?: number | null } | null;
+  setAppliedCoupon: (coupon: { code: string; value: number; minOrderAmount?: number | null } | null) => void;
 }
 
 const TAX_RATE = 0.08;
 
-const COUPON_CODES: Record<string, number> = {
-  "BREW10": 0.10,
-  "CAFE20": 0.20,
-  "SAVE5":  5,
-};
-
-export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout, recommendation, onAddRecommendation }: CartProps) {
+export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout, token, recommendation, onAddRecommendation, appliedCoupon, setAppliedCoupon }: CartProps) {
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; value: number } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [showCoupon, setShowCoupon] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const tax = subtotal * TAX_RATE;
 
+  // Dynamic validation for applied coupon's minimum order requirement
+  useEffect(() => {
+    if (appliedCoupon && appliedCoupon.minOrderAmount !== undefined && appliedCoupon.minOrderAmount !== null) {
+      if (subtotal < appliedCoupon.minOrderAmount) {
+        setAppliedCoupon(null);
+        setCouponError(`Coupon removed: minimum order of $${appliedCoupon.minOrderAmount.toFixed(2)} is not met.`);
+      }
+    }
+  }, [subtotal, appliedCoupon, setAppliedCoupon]);
+
   let discountAmt = 0;
   if (appliedCoupon) {
-    discountAmt = appliedCoupon.value < 1 ? subtotal * appliedCoupon.value : appliedCoupon.value;
+    // discountPercentage from the DB is stored as a whole number (e.g. 10 for 10%)
+    discountAmt = appliedCoupon.value <= 100 ? subtotal * (appliedCoupon.value / 100) : appliedCoupon.value;
   }
   const total = Math.max(0, subtotal + tax - discountAmt);
 
-  const applyCoupon = () => {
+  const applyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
-    const val = COUPON_CODES[code];
-    if (val !== undefined) {
-      setAppliedCoupon({ code, value: val });
+    if (!code) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    if (!token) {
+      setCouponError("Authentication required");
+      return;
+    }
+
+    setIsValidating(true);
+    setCouponError("");
+
+    try {
+      const response = await fetch(`http://localhost:3000/coupons/${encodeURIComponent(code)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        setCouponError("Invalid coupon code");
+        setIsValidating(false);
+        return;
+      }
+
+      const coupon = await response.json();
+
+      // Check if coupon is expired
+      if (new Date(coupon.expiryDate) <= new Date()) {
+        setCouponError("This coupon has expired");
+        setIsValidating(false);
+        return;
+      }
+
+      // Check usage limit
+      if (coupon.currentUsageCount >= coupon.maxUsageCount) {
+        setCouponError("This coupon has reached its usage limit");
+        setIsValidating(false);
+        return;
+      }
+
+      // Check minimum order amount
+      if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount) {
+        setCouponError(`Minimum order amount: $${coupon.minOrderAmount.toFixed(2)}`);
+        setIsValidating(false);
+        return;
+      }
+
+      setAppliedCoupon({
+        code: coupon.code,
+        value: coupon.discountPercentage,
+        minOrderAmount: coupon.minOrderAmount ? Number(coupon.minOrderAmount) : null,
+      });
       setCouponError("");
       setShowCoupon(false);
       setCouponInput("");
-    } else {
-      setCouponError("Invalid coupon code");
+    } catch {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -141,8 +200,18 @@ export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout
           <span>Tax (8%)</span><span className="text-text-body font-semibold">${tax.toFixed(2)}</span>
         </div>
         {appliedCoupon && (
-          <div className="flex justify-between text-[13px] font-semibold text-success">
-            <span className="flex items-center gap-1"><Tag size={12} /> {appliedCoupon.code}</span>
+          <div className="flex justify-between text-[13px] font-semibold text-success items-center">
+            <span className="flex items-center gap-1.5">
+              <Tag size={12} /> {appliedCoupon.code}
+              <button
+                type="button"
+                onClick={() => setAppliedCoupon(null)}
+                className="p-0.5 rounded-full hover:bg-success/20 text-success transition-colors cursor-pointer"
+                title="Remove Coupon"
+              >
+                <Trash2 size={12} />
+              </button>
+            </span>
             <span>-${discountAmt.toFixed(2)}</span>
           </div>
         )}
@@ -166,8 +235,8 @@ export function Cart({ items, onUpdateQty, onRemove, onSendToKitchen, onCheckout
                 placeholder="Enter code"
                 className="flex-1 bg-surface border border-border-custom rounded-[10px] px-3 py-2 text-[13px] font-semibold outline-none focus:border-primary transition-colors uppercase theme-transition"
               />
-              <button onClick={applyCoupon} className="bg-primary hover:brightness-105 text-white text-[13px] font-semibold px-3 py-2 rounded-[10px] transition-colors">
-                Apply
+              <button onClick={applyCoupon} disabled={isValidating} className="bg-primary hover:brightness-105 text-white text-[13px] font-semibold px-3 py-2 rounded-[10px] transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                {isValidating ? <><Loader2 size={13} className="animate-spin" /> Checking...</> : "Apply"}
               </button>
             </div>
           )}

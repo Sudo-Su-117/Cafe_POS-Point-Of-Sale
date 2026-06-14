@@ -2,36 +2,26 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-interface DataPoint { label: string; revenue: number; orders: number; }
+interface DataPoint {
+  label: string;
+  revenue: number;
+  orders: number;
+}
 
-const weeklyData: DataPoint[] = [
-  { label: "Mon", revenue: 1240, orders: 48 },
-  { label: "Tue", revenue: 1580, orders: 63 },
-  { label: "Wed", revenue: 1350, orders: 54 },
-  { label: "Thu", revenue: 1900, orders: 76 },
-  { label: "Fri", revenue: 2200, orders: 88 },
-  { label: "Sat", revenue: 2050, orders: 82 },
-  { label: "Sun", revenue: 1680, orders: 67 },
-];
+interface RevenueChartProps {
+  data?: DataPoint[];
+  isLoading?: boolean;
+}
 
-const monthlyData: DataPoint[] = [
-  { label: "Week 1", revenue: 8200, orders: 328 },
-  { label: "Week 2", revenue: 9400, orders: 376 },
-  { label: "Week 3", revenue: 8800, orders: 352 },
-  { label: "Week 4", revenue: 10200, orders: 408 },
-];
-
-type Mode = "weekly" | "monthly";
 type Metric = "revenue" | "orders";
 
 const SVG_H = 200;
-const P_L = 42;
-const P_R = 8;
-const P_T = 16;
-const P_B = 28;
+const P_L = 55;
+const P_R = 15;
+const P_T = 20;
+const P_B = 32;
 
-export function RevenueChart() {
-  const [mode, setMode] = useState<Mode>("weekly");
+export function RevenueChart({ data = [], isLoading = false }: RevenueChartProps) {
   const [metric, setMetric] = useState<Metric>("revenue");
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [svgW, setSvgW] = useState(620);
@@ -52,14 +42,30 @@ export function RevenueChart() {
     return () => observer.disconnect();
   }, []);
 
-  const data = mode === "weekly" ? weeklyData : monthlyData;
+  if (isLoading) {
+    return (
+      <div className="bg-surface border border-border-custom rounded-[20px] px-4 py-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] h-[280px] flex items-center justify-center theme-transition">
+        <div className="text-text-muted animate-pulse font-semibold">Loading revenue trend...</div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-surface border border-border-custom rounded-[20px] px-4 py-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] h-[280px] flex flex-col items-center justify-center theme-transition">
+        <span className="text-text-muted font-semibold">No trend data available</span>
+        <p className="text-[12px] text-text-muted/60 mt-1">Try selecting a different date range.</p>
+      </div>
+    );
+  }
+
   const values = data.map((d) => (metric === "revenue" ? d.revenue : d.orders));
-  const maxVal = Math.max(...values);
+  const maxVal = Math.max(...values, 1); // fallback to 1 to avoid division by zero
 
   const cW = svgW - P_L - P_R;
   const cH = SVG_H - P_T - P_B;
 
-  const getX = (i: number) => P_L + (i / (data.length - 1)) * cW;
+  const getX = (i: number) => P_L + (i / Math.max(data.length - 1, 1)) * cW;
   const getY = (v: number) => P_T + (1 - v / maxVal) * cH;
 
   const pts: [number, number][] = values.map((v, i) => [getX(i), getY(v)]);
@@ -73,8 +79,9 @@ export function RevenueChart() {
   }, "");
 
   const areaPath =
-    path +
-    ` L ${pts[pts.length - 1][0]} ${P_T + cH} L ${pts[0][0]} ${P_T + cH} Z`;
+    pts.length > 0
+      ? path + ` L ${pts[pts.length - 1][0]} ${P_T + cH} L ${pts[0][0]} ${P_T + cH} Z`
+      : "";
 
   const yTicks = [
     0,
@@ -90,7 +97,7 @@ export function RevenueChart() {
       : `${v}`;
 
   return (
-    <div className="bg-surface border border-border-custom rounded-[20px] px-4 py-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] theme-transition">
+    <div className="bg-surface border border-border-custom rounded-[20px] p-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] theme-transition">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h3 className="text-[18px] font-bold text-text-heading">Revenue Trend</h3>
         <div className="flex items-center gap-2">
@@ -101,18 +108,6 @@ export function RevenueChart() {
                 type="button"
                 onClick={() => setMetric(m)}
                 className={`px-3 py-1 rounded-[10px] text-[13px] font-semibold transition-all capitalize ${metric === m ? "bg-white text-primary shadow-sm" : "text-text-muted hover:text-text-body"}`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <div className="flex bg-surface rounded-[12px] p-1 gap-1 theme-transition">
-            {(["weekly", "monthly"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`px-3 py-1 rounded-[10px] text-[13px] font-semibold transition-all capitalize ${mode === m ? "bg-white text-primary shadow-sm" : "text-text-muted hover:text-text-body"}`}
               >
                 {m}
               </button>
@@ -160,7 +155,7 @@ export function RevenueChart() {
 
           {data.map((d, i) => (
             <text
-              key={d.label}
+              key={`${d.label}-${i}`}
               x={getX(i)}
               y={SVG_H - 6}
               textAnchor="middle"
@@ -172,16 +167,18 @@ export function RevenueChart() {
             </text>
           ))}
 
-          <path d={areaPath} fill="url(#areaGrad)" />
-          <path
-            d={path}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
+          {pts.length > 0 && <path d={areaPath} fill="url(#areaGrad)" />}
+          {pts.length > 0 && (
+            <path
+              d={path}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+            />
+          )}
 
-          {hoveredIdx !== null && (
+          {hoveredIdx !== null && hoveredIdx < pts.length && (
             <line
               x1={getX(hoveredIdx)}
               y1={P_T}
@@ -226,7 +223,7 @@ export function RevenueChart() {
           })}
         </svg>
 
-        {hoveredIdx !== null && (
+        {hoveredIdx !== null && hoveredIdx < data.length && (
           <div
             className="absolute top-4 bg-white border border-border-custom rounded-[12px] p-2.5 shadow-md pointer-events-none z-10 text-xs font-semibold text-text-body"
             style={{
@@ -237,7 +234,9 @@ export function RevenueChart() {
             <div className="text-[11px] font-bold text-text-heading mb-1">
               {data[hoveredIdx].label}
             </div>
-            <div>Revenue: ${data[hoveredIdx].revenue.toLocaleString()}</div>
+            <div>
+              Revenue: ${data[hoveredIdx].revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
             <div>Orders: {data[hoveredIdx].orders}</div>
           </div>
         )}

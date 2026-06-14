@@ -19,6 +19,7 @@ export interface KDSOrder {
   items: KDSItem[];
   sentAt: string;
   elapsed: number; // minutes
+  completedAt?: string;
 }
 
 interface KDSTicketProps {
@@ -88,10 +89,17 @@ export function KDSTicket({ order, onAdvanceStage, onToggleItem }: KDSTicketProp
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border-custom flex items-center justify-between">
-        <div className={`flex items-center gap-1 text-[12px] font-semibold ${order.elapsed >= 15 ? "text-danger" : order.elapsed >= 8 ? "text-gold" : "text-text-muted"}`}>
-          <Clock size={12} />
-          {order.elapsed}m ago
-        </div>
+        {order.stage === "completed" ? (
+          <div className="flex items-center gap-1 text-[12px] font-semibold text-success">
+            <Clock size={12} />
+            Completed at {order.completedAt || order.sentAt}
+          </div>
+        ) : (
+          <div className={`flex items-center gap-1 text-[12px] font-semibold ${order.elapsed >= 15 ? "text-danger" : order.elapsed >= 8 ? "text-gold" : "text-text-muted"}`}>
+            <Clock size={12} />
+            {order.elapsed}m ago
+          </div>
+        )}
         {order.stage !== "completed" && (
           <button
             onClick={() => onAdvanceStage(order.id)}

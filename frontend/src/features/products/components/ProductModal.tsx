@@ -8,21 +8,23 @@ import { X } from "lucide-react";
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: ProductFormData) => void;
+  onSave: (product: any) => void;
   product?: Product | null;
+  categories: Array<{ id: string; name: string }>;
 }
 
-const CATEGORIES: Product["category"][] = ["Espresso", "Cold Brew", "Pastries", "Sandwiches", "Tea"];
 const UOMS = ["Cup", "Can", "Piece", "Plate", "Bottle"];
 const TAXES = ["5%", "8%", "10%", "0%"];
 
-export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
+export function ProductModal({ isOpen, onClose, onSave, product, categories }: ProductModalProps) {
   const [name, setName] = useState(product ? product.name : "");
-  const [category, setCategory] = useState<Product["category"]>(product ? product.category : "Espresso");
+  const [categoryId, setCategoryId] = useState(product && (product as any).categoryId ? (product as any).categoryId : (categories[0]?.id || ""));
   const [price, setPrice] = useState(product ? product.price.toString() : "");
   const [uom, setUom] = useState(product ? product.uom : "Cup");
   const [tax, setTax] = useState(product ? product.tax : "8%");
   const [active, setActive] = useState(product ? product.active : true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(product?.imageUrl || null);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -33,11 +35,12 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     onSave({
       id: product?.id,
       name: name.trim(),
-      category,
+      categoryId,
       price: parseFloat(price),
       uom,
       tax,
       active,
+      imageFile,
     });
     onClose();
   };
@@ -65,6 +68,34 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 font-sans">
+          {/* Image upload */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-bold text-text-body uppercase tracking-wider">
+              Product Image
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setImageFile(file);
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="text-[13px] text-text-muted cursor-pointer"
+              />
+              {imagePreview && (
+                <div className="relative w-10 h-10 rounded-[6px] overflow-hidden border border-border-custom shrink-0">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="flex flex-col">
             <label className="text-[13px] font-bold text-text-body mb-1.5 uppercase tracking-wider">
               Product Name *
@@ -85,13 +116,13 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 Category
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as Product["category"])}
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
                 className="h-[42px] px-3.5 rounded-[10px] bg-white border border-border-custom text-[14px] font-semibold text-text-heading outline-none focus:border-primary transition-all cursor-pointer"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </select>

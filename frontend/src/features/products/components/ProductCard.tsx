@@ -27,13 +27,21 @@ export function ProductCard({
     <div className="bg-input border border-border-custom rounded-[20px] shadow-[0_2px_4px_rgba(0,0,0,0.03)] hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-[250ms] ease-in-out flex flex-col theme-transition">
       <div className="relative m-[10px]">
         <div className="relative h-[170px] w-full overflow-hidden rounded-[14px]">
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover"
-          />
+          {product.imageUrl && typeof product.imageUrl === "string" && product.imageUrl.trim() !== "" ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              className="object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-border-custom/30 rounded-[14px]">
+              <span className="text-primary font-bold text-4xl select-none font-sans">
+                {product.name.trim() ? product.name.trim()[0].toUpperCase() : "?"}
+              </span>
+            </div>
+          )}
         </div>
 
         <span

@@ -30,3 +30,4 @@ async function bootstrap() {
 }
 
 bootstrap();
+// Trigger dev server watch recompile

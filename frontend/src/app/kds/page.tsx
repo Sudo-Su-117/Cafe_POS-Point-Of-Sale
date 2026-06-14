@@ -1,53 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { KDSTicket, KDSOrder, KDSStage } from "@/features/kds/components/KDSTicket";
-
-const initialOrders: KDSOrder[] = [
-  {
-    id: "#0847", table: "Table 3", stage: "to-cook", elapsed: 2,
-    sentAt: "14:22",
-    items: [
-      { id: 1, name: "Espresso",       quantity: 2, done: false },
-      { id: 2, name: "Croissant",      quantity: 1, done: false },
-      { id: 3, name: "Cold Brew",      quantity: 1, done: false },
-    ],
-  },
-  {
-    id: "#0846", table: "Table 7", stage: "preparing", elapsed: 9,
-    sentAt: "14:15",
-    items: [
-      { id: 1, name: "Flat White",     quantity: 1, done: true  },
-      { id: 2, name: "Club Sandwich",  quantity: 2, done: false },
-      { id: 3, name: "Matcha Latte",   quantity: 1, done: false },
-    ],
-  },
-  {
-    id: "#0845", table: "Bar",     stage: "preparing", elapsed: 17,
-    sentAt: "14:07",
-    items: [
-      { id: 1, name: "Cappuccino",     quantity: 3, done: true  },
-      { id: 2, name: "Blueberry Muffin",quantity:2, done: true  },
-    ],
-  },
-  {
-    id: "#0844", table: "Table 2", stage: "completed", elapsed: 24,
-    sentAt: "14:00",
-    items: [
-      { id: 1, name: "Nitro Cold Brew",quantity: 1, done: true  },
-      { id: 2, name: "BLT",            quantity: 1, done: true  },
-    ],
-  },
-  {
-    id: "#0843", table: "Table 11",stage: "to-cook", elapsed: 1,
-    sentAt: "14:23",
-    items: [
-      { id: 1, name: "Chai",           quantity: 2, done: false },
-      { id: 2, name: "Lemonade",       quantity: 1, done: false },
-    ],
-  },
-];
 
 type FilterStage = "all" | KDSStage;
 
@@ -59,22 +14,148 @@ const stageFilters: { key: FilterStage; label: string; color: string }[] = [
 ];
 
 export default function KDSPage() {
-  const [orders, setOrders] = useState<KDSOrder[]>(initialOrders);
+  const [orders, setOrders] = useState<KDSOrder[]>([]);
+  const [tables, setTables] = useState<any[]>([]);
   const [filter, setFilter] = useState<FilterStage>("all");
   const [search, setSearch] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
-  const advanceStage = (id: string) => {
-    setOrders(prev => prev.map(o => {
-      if (o.id !== id) return o;
-      const next: KDSStage = o.stage === "to-cook" ? "preparing" : "completed";
-      return { ...o, stage: next };
-    }));
+  // Auto-login to obtain JWT token
+  useEffect(() => {
+    async function autoLogin() {
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "admin@cafe.com",
+            password: "Admin@123",
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.accessToken);
+        }
+      } catch (err) {
+        console.error("KDS auto-login error:", err);
+      }
+    }
+    autoLogin();
+  }, []);
+
+  const refreshQueue = async (jwt: string) => {
+    try {
+      const headers = { Authorization: `Bearer ${jwt}` };
+      const [queueRes, tablesRes] = await Promise.all([
+        fetch("http://localhost:3000/kds/queue", { headers }),
+        fetch("http://localhost:3000/tables", { headers }),
+      ]);
+
+      if (queueRes.ok && tablesRes.ok) {
+        const queueData = await queueRes.json();
+        const tablesData = await tablesRes.json();
+        setTables(tablesData);
+
+        const mapped: KDSOrder[] = queueData.map((order: any) => {
+          const matchedTable = tablesData.find((t: any) => t.id === order.tableId);
+          const tableNumber = matchedTable ? matchedTable.tableNumber : "Table";
+          
+          let stage: KDSStage = "to-cook";
+          if (order.status === "PREPARING") {
+            stage = "preparing";
+          } else if (order.status === "COMPLETED") {
+            stage = "completed";
+          } else if (order.status === "SENT_TO_KITCHEN" || order.status === "PAID") {
+            stage = "to-cook";
+          }
+
+          const date = new Date(order.createdAt);
+          const sentAt = date.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+          const elapsed = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+
+          const completedAtDate = new Date(order.updatedAt || order.createdAt);
+          const completedAt = (order.status === "COMPLETED")
+            ? completedAtDate.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })
+            : undefined;
+
+          const items = (order.orderItems || []).map((item: any) => ({
+            id: item.id,
+            name: item.product?.name || "Product",
+            quantity: item.quantity,
+            done: !!checkedItems[item.id]
+          }));
+
+          return {
+            id: order.id,
+            table: tableNumber,
+            stage,
+            items,
+            sentAt,
+            elapsed,
+            completedAt
+          };
+        });
+
+        setOrders(mapped);
+      }
+    } catch (err) {
+      console.error("Error refreshing KDS queue:", err);
+    }
   };
 
-  const toggleItem = (orderId: string, itemId: number) => {
-    setOrders(prev => prev.map(o => {
-      if (o.id !== orderId) return o;
-      return { ...o, items: o.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) };
+  useEffect(() => {
+    if (token) {
+      refreshQueue(token);
+      const interval = setInterval(() => refreshQueue(token), 5000);
+      return () => clearInterval(interval);
+    }
+  }, [token, checkedItems]); // include checkedItems to refresh lists correctly when toggled
+
+  const advanceStage = async (id: string) => {
+    if (!token) return;
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+
+    try {
+      if (order.stage === "to-cook") {
+        const response = await fetch(`http://localhost:3000/kds/order/${id}/status`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "preparing",
+          }),
+        });
+        if (response.ok) {
+          refreshQueue(token);
+        } else {
+          console.error("Failed to update status to preparing");
+        }
+      } else if (order.stage === "preparing") {
+        const response = await fetch(`http://localhost:3000/kds/order/${id}/mark-ready`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          refreshQueue(token);
+        } else {
+          console.error("Failed to mark order completed");
+        }
+      }
+    } catch (err) {
+      console.error("Error advancing KDS stage:", err);
+    }
+  };
+
+  const toggleItem = (orderId: string, itemId: any) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
     }));
   };
 
@@ -104,7 +185,7 @@ export default function KDSPage() {
           <p className="text-[13px] text-text-muted mt-0.5">Click a ticket to advance stage · Click an item to mark it done</p>
         </div>
         <button
-          onClick={() => setOrders(initialOrders)}
+          onClick={() => token && refreshQueue(token)}
           className="flex items-center gap-2 bg-surface hover:bg-border-custom/30 border border-border-custom text-text-muted hover:text-text-heading text-[13px] font-semibold px-4 py-2 rounded-[12px] transition-colors theme-transition"
         >
           <RefreshCw size={14} /> Refresh
@@ -168,14 +249,21 @@ export default function KDSPage() {
                     <span className="text-[13px] font-semibold">No orders here</span>
                   </div>
                 ) : (
-                  stageOrders.map(order => (
-                    <KDSTicket
-                      key={order.id}
-                      order={order}
-                      onAdvanceStage={advanceStage}
-                      onToggleItem={toggleItem}
-                    />
-                  ))
+                  stageOrders.map(order => {
+                    const displayOrder = {
+                      ...order,
+                      // format ID for display using last 4 characters of UUID
+                      id: `#${order.id.slice(-4).toUpperCase()}`
+                    };
+                    return (
+                      <KDSTicket
+                        key={order.id}
+                        order={displayOrder}
+                        onAdvanceStage={() => advanceStage(order.id)}
+                        onToggleItem={(orderId, itemId) => toggleItem(orderId, itemId)}
+                      />
+                    );
+                  })
                 )}
               </div>
             </div>

@@ -216,7 +216,7 @@ export function PaymentForm({ mode, initial, existingNames, onSave, onCancel }: 
                   : "border-border-custom hover:border-primary hover:bg-primary/5"
               }`}
             >
-              {upiQrImage ? (
+              {upiQrImage && typeof upiQrImage === "string" && upiQrImage.trim() !== "" ? (
                 <div className="flex items-center gap-3 w-full">
                   <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-border-custom shrink-0 bg-input">
                     <Image src={upiQrImage} alt="Uploaded QR" fill className="object-contain p-1" unoptimized />

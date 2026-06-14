@@ -7,18 +7,15 @@ interface OrderRow {
   customer: string;
   table: string;
   items: number;
-  amount: string;
+  amount: number;
   status: "Paid" | "Draft" | "Cancelled";
   date: string;
 }
 
-const orders: OrderRow[] = [
-  { id: "#0844", customer: "Alex M.",    table: "Table 3",  items: 5, amount: "$87.50", status: "Paid",      date: "Jun 13" },
-  { id: "#0843", customer: "Sarah L.",   table: "Table 7",  items: 4, amount: "$72.00", status: "Paid",      date: "Jun 13" },
-  { id: "#0839", customer: "Daniel K.",  table: "Table 11", items: 6, amount: "$68.50", status: "Paid",      date: "Jun 12" },
-  { id: "#0835", customer: "Maya P.",    table: "Bar",      items: 3, amount: "$61.00", status: "Paid",      date: "Jun 12" },
-  { id: "#0831", customer: "Walk-in",    table: "Table 2",  items: 7, amount: "$55.50", status: "Cancelled", date: "Jun 11" },
-];
+interface TopOrdersTableProps {
+  orders?: OrderRow[];
+  isLoading?: boolean;
+}
 
 const statusStyles = {
   Paid:      "bg-success/10 text-success",
@@ -26,14 +23,28 @@ const statusStyles = {
   Cancelled: "bg-danger/10 text-danger",
 };
 
-export function TopOrdersTable() {
+export function TopOrdersTable({ orders = [], isLoading = false }: TopOrdersTableProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-surface border border-border-custom rounded-[20px] p-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] h-[350px] flex items-center justify-center theme-transition">
+        <div className="text-text-muted animate-pulse font-semibold">Loading top orders...</div>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-surface border border-border-custom rounded-[20px] p-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] h-[350px] flex flex-col items-center justify-center theme-transition">
+        <span className="text-text-muted font-semibold">No orders found for this period</span>
+        <p className="text-[12px] text-text-muted/60 mt-1">Try selecting a different date range.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface border border-border-custom rounded-[20px] p-6 hover:-translate-y-0.5 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] theme-transition">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[18px] font-bold text-text-heading">Top Orders</h3>
-        <button className="text-[13px] font-semibold text-text-muted hover:text-primary transition-colors bg-surface px-3.5 py-1.5 rounded-[12px] theme-transition">
-          Export PDF
-        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left min-w-[480px]">
@@ -48,7 +59,7 @@ export function TopOrdersTable() {
             </tr>
           </thead>
           <tbody>
-            {orders.map(o => (
+            {orders.map((o) => (
               <tr key={o.id} className="h-[52px] border-b border-border-custom/50 last:border-0 hover:bg-white/40 transition-colors">
                 <td className="px-4 py-2">
                   <span className="text-[14px] font-bold text-primary">{o.id}</span>
@@ -57,7 +68,9 @@ export function TopOrdersTable() {
                 <td className="px-4 py-2 text-[14px] font-semibold text-text-body">{o.customer}</td>
                 <td className="px-4 py-2 text-[13px] font-medium text-text-muted">{o.table}</td>
                 <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-center">{o.items}</td>
-                <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-right">{o.amount}</td>
+                <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-right">
+                  ${o.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
                 <td className="px-4 py-2 text-right">
                   <span className={`inline-flex items-center justify-center px-2.5 h-[26px] rounded-full text-[12px] font-bold ${statusStyles[o.status]}`}>
                     {o.status}

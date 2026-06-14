@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { Search, Plus } from "lucide-react";
 
-interface Product {
-  id: number;
+export interface Product {
+  id: string;
   name: string;
   price: number;
   category: string;
@@ -12,32 +12,20 @@ interface Product {
   emoji: string;
 }
 
-export const allProducts: Product[] = [
-  { id: 1,  name: "Espresso",               price: 2.50,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
-  { id: 2,  name: "Caffe Latte",             price: 4.20,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
-  { id: 3,  name: "Cappuccino",              price: 4.20,  category: "Coffee",             categoryColor: "#C9783A", emoji: "☕" },
-  { id: 4,  name: "Cold Brew Coffee",        price: 4.00,  category: "Cold Beverages",     categoryColor: "#866443", emoji: "🧊" },
-  { id: 5,  name: "Chocolate Milkshake",     price: 4.80,  category: "Cold Beverages",     categoryColor: "#866443", emoji: "🥛" },
-  { id: 6,  name: "Butter Croissant",        price: 3.00,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🥐" },
-  { id: 7,  name: "Blueberry Muffin",        price: 3.20,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🧁" },
-  { id: 8,  name: "Chicken Club Sandwich",   price: 8.50,  category: "Sandwiches & Wraps", categoryColor: "#789658", emoji: "🥪" },
-  { id: 9,  name: "Chocolate Chip Cookie",   price: 2.50,  category: "Bakery",             categoryColor: "#D6A144", emoji: "🍪" },
-  { id: 10, name: "Matcha Latte",            price: 4.90,  category: "Tea & Chai",         categoryColor: "#A86D4D", emoji: "🍵" },
-  { id: 11, name: "Masala Chai",             price: 3.50,  category: "Tea & Chai",         categoryColor: "#A86D4D", emoji: "🧋" },
-  { id: 12, name: "New York Cheesecake",     price: 5.50,  category: "Desserts",           categoryColor: "#78964E", emoji: "🍰" },
-];
-
-const categories = ["All", ...Array.from(new Set(allProducts.map(p => p.category)))];
-
 interface ProductGridProps {
+  products: Product[];
   onAddToCart: (product: Product) => void;
 }
 
-export function ProductGrid({ onAddToCart }: ProductGridProps) {
+export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
 
-  const filtered = allProducts.filter(p => {
+  const categories = React.useMemo(() => {
+    return ["All", ...Array.from(new Set(products.map(p => p.category)))];
+  }, [products]);
+
+  const filtered = products.filter(p => {
     const matchCat = activeCategory === "All" || p.category === activeCategory;
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
