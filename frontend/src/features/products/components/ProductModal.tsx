@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Product, ProductFormData } from "@/lib/product-types";
 import { X } from "lucide-react";
@@ -8,23 +8,34 @@ import { X } from "lucide-react";
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: any) => void;
+  onSave: (product: ProductFormData) => void;
   product?: Product | null;
-  categories: Array<{ id: string; name: string }>;
 }
 
+const CATEGORIES: Product["category"][] = ["Espresso", "Cold Brew", "Pastries", "Sandwiches", "Tea"];
 const UOMS = ["Cup", "Can", "Piece", "Plate", "Bottle"];
 const TAXES = ["5%", "8%", "10%", "0%"];
 
-export function ProductModal({ isOpen, onClose, onSave, product, categories }: ProductModalProps) {
-  const [name, setName] = useState(product ? product.name : "");
-  const [categoryId, setCategoryId] = useState(product && (product as any).categoryId ? (product as any).categoryId : (categories[0]?.id || ""));
-  const [price, setPrice] = useState(product ? product.price.toString() : "");
-  const [uom, setUom] = useState(product ? product.uom : "Cup");
-  const [tax, setTax] = useState(product ? product.tax : "8%");
-  const [active, setActive] = useState(product ? product.active : true);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(product?.imageUrl || null);
+export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<Product["category"]>("Espresso");
+  const [price, setPrice] = useState("");
+  const [uom, setUom] = useState("Cup");
+  const [tax, setTax] = useState("8%");
+  const [active, setActive] = useState(true);
+
+  // Sync form state whenever the product prop changes (fixes bug: editing a
+  // second product would show the first product's stale data)
+  useEffect(() => {
+    if (isOpen) {
+      setName(product?.name ?? "");
+      setCategory(product?.category ?? "Espresso");
+      setPrice(product?.price?.toString() ?? "");
+      setUom(product?.uom ?? "Cup");
+      setTax(product?.tax ?? "8%");
+      setActive(product?.active ?? true);
+    }
+  }, [isOpen, product]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -35,12 +46,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     onSave({
       id: product?.id,
       name: name.trim(),
-      categoryId,
+      category,
       price: parseFloat(price),
       uom,
       tax,
       active,
-      imageFile,
     });
     onClose();
   };
@@ -68,34 +78,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 font-sans">
-          {/* Image upload */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-bold text-text-body uppercase tracking-wider">
-              Product Image
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setImageFile(file);
-                    const reader = new FileReader();
-                    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="text-[13px] text-text-muted cursor-pointer"
-              />
-              {imagePreview && (
-                <div className="relative w-10 h-10 rounded-[6px] overflow-hidden border border-border-custom shrink-0">
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-            </div>
-          </div>
-
           <div className="flex flex-col">
             <label className="text-[13px] font-bold text-text-body mb-1.5 uppercase tracking-wider">
               Product Name *
@@ -116,13 +98,13 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 Category
               </label>
               <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Product["category"])}
                 className="h-[42px] px-3.5 rounded-[10px] bg-white border border-border-custom text-[14px] font-semibold text-text-heading outline-none focus:border-primary transition-all cursor-pointer"
               >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
                   </option>
                 ))}
               </select>
@@ -187,13 +169,15 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </span>
             <button
               type="button"
+              role="switch"
+              aria-checked={active}
               onClick={() => setActive(!active)}
-              className={`relative inline-flex h-[26px] w-[48px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                active ? "bg-success" : "bg-border-custom/50"
+              className={`relative inline-flex shrink-0 cursor-pointer h-[26px] w-12 rounded-full p-[4px] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                active ? "bg-success" : "bg-border-custom"
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-[22px] w-[22px] transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                className={`block h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
                   active ? "translate-x-[22px]" : "translate-x-0"
                 }`}
               />

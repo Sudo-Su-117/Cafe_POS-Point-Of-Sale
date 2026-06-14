@@ -17,11 +17,17 @@ const pageTitles: Record<string, string> = {
   "/reports":   "Reports",
   "/pos":       "POS Terminal",
   "/kds":       "Kitchen KDS",
+  "/ask-ai":    "Ask Cafe AI",
 };
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+
+  if (pathname.startsWith("/pos") || pathname === "/kds" || pathname === "/login") {
+    return <>{children}</>;
+  }
+
   const title = pageTitles[pathname] ?? "Brewhouse";
 
   return (
