@@ -68,7 +68,7 @@ export function TopOrdersTable({ orders = [], isLoading = false }: TopOrdersTabl
                 <td className="px-4 py-2 text-[14px] font-semibold text-text-body">{o.customer}</td>
                 <td className="px-4 py-2 text-[13px] font-medium text-text-muted">{o.table}</td>
                 <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-center">{o.items}</td>
-                <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-right">
+                <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-right whitespace-nowrap">
                   ₹{o.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td className="px-4 py-2 text-right">

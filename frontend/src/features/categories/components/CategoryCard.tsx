@@ -93,7 +93,7 @@ export function CategoryCard({ category, onEdit, onDelete, onView }: CategoryCar
           </div>
           <div className="bg-surface rounded-[12px] p-3 flex flex-col gap-0.5 theme-transition">
             <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Revenue</span>
-            <span className="text-[20px] font-bold leading-none" style={{ color: category.color }}>
+            <span className="text-[20px] font-bold leading-none whitespace-nowrap truncate max-w-full" style={{ color: category.color }}>
               {category.revenue}
             </span>
           </div>

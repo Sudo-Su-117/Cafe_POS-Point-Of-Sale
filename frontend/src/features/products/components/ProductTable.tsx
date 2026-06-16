@@ -71,7 +71,7 @@ export function ProductTable({
                 </td>
                 
                 {/* Price */}
-                <td className="px-6 py-2 text-[15px] font-semibold text-text-heading">
+                <td className="px-6 py-2 text-[15px] font-semibold text-text-heading whitespace-nowrap">
                   ₹{product.price.toFixed(2)}
                 </td>
                 

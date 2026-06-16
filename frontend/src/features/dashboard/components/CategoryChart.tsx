@@ -88,14 +88,25 @@ export function CategoryChart({ categories = [], totalRevenue = 0, isLoading = f
           })}
         </svg>
 
-        <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none font-sans">
-          <span className="text-[13px] font-semibold text-text-muted uppercase tracking-wider">
+        <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none font-sans px-4 text-center">
+          <span className="text-[11px] md:text-[12px] font-bold text-text-muted uppercase tracking-wider truncate max-w-full">
             {hoveredIdx !== null ? categories[hoveredIdx].name : "Total Sales"}
           </span>
-          <span className="text-[24px] font-bold text-text-heading mt-0.5 leading-none">
+          <span 
+            className="font-extrabold text-text-heading mt-1 leading-none whitespace-nowrap"
+            style={{
+              fontSize: hoveredIdx !== null 
+                ? "24px" 
+                : totalRevenue >= 1000000 
+                  ? "16px" 
+                  : totalRevenue >= 100000 
+                    ? "18px" 
+                    : "22px"
+            }}
+          >
             {hoveredIdx !== null
               ? categories[hoveredIdx].percentage + "%"
-              : `₹${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+              : `₹${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
           </span>
         </div>
       </div>
@@ -106,26 +117,26 @@ export function CategoryChart({ categories = [], totalRevenue = 0, isLoading = f
           return (
             <div
               key={cat.name}
-              className={`flex items-center justify-between py-0.5 px-2.5 rounded-xl transition-all duration-200 ${
+              className={`flex items-center justify-between py-0.5 px-2.5 rounded-xl transition-all duration-200 gap-2 ${
                 isHovered ? "bg-white/80 shadow-sm scale-[1.02]" : "hover:bg-white/40"
               }`}
               onMouseEnter={() => setHoveredIdx(idx)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className="w-3 h-3 rounded-full shrink-0 border border-black/5"
+                  className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/5"
                   style={{ backgroundColor: cat.color }}
                 />
-                <span className="text-[14px] font-semibold text-text-body font-sans">
+                <span className="text-[13px] font-semibold text-text-body font-sans truncate">
                   {cat.name}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[13px] font-medium text-text-muted font-sans">
-                  ₹{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <span className="text-[13px] font-semibold text-text-muted font-sans whitespace-nowrap">
+                  ₹{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
-                <span className="text-[14px] font-bold text-text-heading font-sans w-8 text-right">
+                <span className="text-[13px] font-bold text-text-heading font-sans w-9 text-right shrink-0">
                   {cat.percentage}%
                 </span>
               </div>

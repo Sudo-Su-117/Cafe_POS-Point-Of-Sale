@@ -53,7 +53,7 @@ export function CategoryBreakdown({ categories = [], isLoading = false }: Catego
           const color = colors[index % colors.length];
           return (
             <div key={cat.name} className="flex items-center gap-3">
-              <div className="flex items-center gap-2 w-[140px] shrink-0">
+              <div className="flex items-center gap-2 w-[110px] shrink-0">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
                 <span className="text-[13px] font-semibold text-text-body truncate">{cat.name}</span>
               </div>
@@ -63,18 +63,18 @@ export function CategoryBreakdown({ categories = [], isLoading = false }: Catego
                   style={{ width: `${cat.pct}%`, backgroundColor: color }}
                 />
               </div>
-              <span className="text-[13px] font-bold text-text-heading w-8 text-right shrink-0">{cat.pct}%</span>
-              <span className="text-[13px] font-semibold text-primary w-24 text-right shrink-0">
-                ₹{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className="text-[13px] font-bold text-text-heading w-10 text-right shrink-0">{cat.pct}%</span>
+              <span className="text-[13px] font-semibold text-primary w-28 text-right shrink-0 whitespace-nowrap">
+                ₹{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="mt-5 pt-4 border-t border-border-custom/60 flex justify-between text-[13px] font-semibold">
-        <span className="text-text-muted">Total Orders: <span className="text-text-heading font-bold">{totalOrders}</span></span>
-        <span className="text-text-muted">Total Revenue: <span className="text-primary font-bold">
-          ₹{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      <div className="mt-5 pt-4 border-t border-border-custom/60 flex justify-between gap-4 text-[13px] font-semibold flex-wrap">
+        <span className="text-text-muted whitespace-nowrap">Total Orders: <span className="text-text-heading font-bold">{totalOrders}</span></span>
+        <span className="text-text-muted whitespace-nowrap">Total Revenue: <span className="text-primary font-bold whitespace-nowrap">
+          ₹{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </span></span>
       </div>
     </div>

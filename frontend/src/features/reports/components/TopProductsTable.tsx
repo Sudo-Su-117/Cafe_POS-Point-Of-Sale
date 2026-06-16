@@ -65,7 +65,7 @@ export function TopProductsTable({ products = [], isLoading = false }: TopProduc
                 <td className="px-4 py-2 text-[14px] font-semibold text-text-heading">{p.name}</td>
                 <td className="px-4 py-2 text-[13px] font-medium text-text-muted">{p.category}</td>
                 <td className="px-4 py-2 text-[14px] font-bold text-text-heading text-right">{p.qty}</td>
-                <td className="px-4 py-2 text-[14px] font-bold text-primary text-right">
+                <td className="px-4 py-2 text-[14px] font-bold text-primary text-right whitespace-nowrap">
                   ₹{p.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td className="px-4 py-2 text-right">

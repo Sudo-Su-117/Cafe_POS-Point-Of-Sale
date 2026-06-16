@@ -47,7 +47,7 @@ export function StatCard({
         <span className="text-[13px] font-semibold text-text-muted font-sans select-none uppercase tracking-wider">
           {title}
         </span>
-        <span className="text-[26px] sm:text-[28px] font-bold text-text-heading leading-none font-sans mt-0.5">
+        <span className="text-[24px] sm:text-[26px] md:text-[28px] font-bold text-text-heading leading-none font-sans mt-0.5 whitespace-nowrap">
           {value}
         </span>
         <span
