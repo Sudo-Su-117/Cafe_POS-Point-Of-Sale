@@ -30,6 +30,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const title = pageTitles[pathname] ?? "Brewhouse";
 
+  if (pathname.startsWith("/pos")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-row overflow-x-hidden">
       {/* Sidebar Navigation */}

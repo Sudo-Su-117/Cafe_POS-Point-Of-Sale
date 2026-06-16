@@ -72,7 +72,7 @@ export function ProductTable({
                 
                 {/* Price */}
                 <td className="px-6 py-2 text-[15px] font-semibold text-text-heading">
-                  ${product.price.toFixed(2)}
+                  ₹{product.price.toFixed(2)}
                 </td>
                 
                 {/* UOM */}

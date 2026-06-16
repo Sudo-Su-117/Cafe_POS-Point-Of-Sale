@@ -63,7 +63,7 @@ export function PaymentModal({ total, onClose, onSuccess, onPaySuccess, cartItem
       `<tr>
         <td style="padding:4px 0;text-align:left;">${item.name}</td>
         <td style="padding:4px 8px;text-align:center;">${item.quantity}</td>
-        <td style="padding:4px 0;text-align:right;">$${(item.price * item.quantity).toFixed(2)}</td>
+        <td style="padding:4px 0;text-align:right;">₹${(item.price * item.quantity).toFixed(2)}</td>
       </tr>`
     ).join("");
 
@@ -121,9 +121,9 @@ export function PaymentModal({ total, onClose, onSuccess, onPaySuccess, cartItem
         <div class="divider"></div>
 
         <div class="totals">
-          <div class="row"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
-          <div class="row"><span>Tax</span><span>$${tax.toFixed(2)}</span></div>
-          <div class="row grand"><span>Total</span><span>$${rd.total.toFixed(2)}</span></div>
+          <div class="row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+          <div class="row"><span>Tax</span><span>₹${tax.toFixed(2)}</span></div>
+          <div class="row grand"><span>Total</span><span>₹${rd.total.toFixed(2)}</span></div>
         </div>
 
         <div style="text-align:center;margin-top:12px;">
@@ -161,7 +161,7 @@ export function PaymentModal({ total, onClose, onSuccess, onPaySuccess, cartItem
           <p className="text-text-muted text-[14px] mt-2">
             Payment via <span className="font-bold text-text-heading">{paidMethod.toUpperCase()}</span> completed
           </p>
-          <p className="text-[28px] font-bold text-primary mt-3">${receiptData.current.total.toFixed(2)}</p>
+          <p className="text-[28px] font-bold text-primary mt-3">₹{receiptData.current.total.toFixed(2)}</p>
           <div className="flex gap-3 mt-6 w-full">
             <button
               onClick={handlePrintReceipt}
@@ -186,7 +186,7 @@ export function PaymentModal({ total, onClose, onSuccess, onPaySuccess, cartItem
         <div className="flex items-center justify-between px-6 py-5 border-b border-border-custom">
           <div>
             <h2 className="text-[20px] font-bold text-text-heading">Payment</h2>
-            <p className="text-[13px] text-text-muted mt-0.5">Total due: <span className="text-primary font-bold">${total.toFixed(2)}</span></p>
+            <p className="text-[13px] text-text-muted mt-0.5">Total due: <span className="text-primary font-bold">₹{total.toFixed(2)}</span></p>
           </div>
           <button onClick={onClose} className="p-2 rounded-[12px] hover:bg-surface text-text-muted transition-colors theme-transition">
             <X size={20} />
@@ -218,7 +218,7 @@ export function PaymentModal({ total, onClose, onSuccess, onPaySuccess, cartItem
           {/* Amount display */}
           <div className="bg-primary/5 border border-primary/15 rounded-[16px] p-5 flex flex-col items-center gap-1">
             <span className="text-[13px] font-semibold text-text-muted">Amount to Charge</span>
-            <span className="text-[32px] font-bold text-primary">${total.toFixed(2)}</span>
+            <span className="text-[32px] font-bold text-primary">₹{total.toFixed(2)}</span>
             <span className="text-[12px] font-medium text-text-muted mt-1">
               {method === "cash" ? "💵 Collect cash from customer" :
                method === "card" ? "💳 Swipe or tap card" :

@@ -242,7 +242,7 @@ export function SalesChart({ data = [], isLoading = false }: SalesChartProps) {
               <div className="text-primary flex items-center justify-between gap-4">
                 <span>Revenue:</span>
                 <span>
-                  ${data[hoveredIdx].sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₹{data[hoveredIdx].sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="text-success flex items-center justify-between gap-4">

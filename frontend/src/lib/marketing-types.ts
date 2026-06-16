@@ -38,19 +38,19 @@ export function formatCouponDiscountType(type: CouponDiscountType): string {
 }
 
 export function formatCouponValue(type: CouponDiscountType, value: number): string {
-  return type === "percentage" ? `${value}%` : `$${value.toFixed(2)}`;
+  return type === "percentage" ? `${value}%` : `₹${value.toFixed(2)}`;
 }
 
 export function formatPromotionTrigger(
   type: PromotionTriggerType,
   value: number
 ): string {
-  return type === "min_qty" ? `Min Qty: ${value}` : `Min Amount: $${value}`;
+  return type === "min_qty" ? `Min Qty: ${value}` : `Min Amount: ₹${value}`;
 }
 
 export function formatPromotionDiscount(
   type: PromotionDiscountType,
   value: number
 ): string {
-  return type === "percentage" ? `${value}% off` : `$${value} off`;
+  return type === "percentage" ? `${value}% off` : `₹${value} off`;
 }

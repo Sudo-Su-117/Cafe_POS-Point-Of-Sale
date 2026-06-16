@@ -223,7 +223,7 @@ export function ProductModal({
                 Price <span className="text-danger">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-bold text-text-muted">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-bold text-text-muted">₹</span>
                 <input
                   type="number"
                   min={0}
@@ -316,7 +316,7 @@ export function ProductModal({
                 <p className="text-[12px] text-text-muted truncate">{description || "Description"}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-[15px] font-bold text-text-heading">${price ? parseFloat(price).toFixed(2) : "0.00"}</p>
+                <p className="text-[15px] font-bold text-text-heading">₹{price ? parseFloat(price).toFixed(2) : "0.00"}</p>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${status === "Active" ? "bg-success/10 text-success" : "bg-surface text-text-muted"}`}>
                   {status}
                 </span>

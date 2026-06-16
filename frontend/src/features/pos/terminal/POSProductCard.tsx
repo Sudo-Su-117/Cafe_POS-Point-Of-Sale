@@ -30,7 +30,7 @@ export function POSProductCard({ product, onAdd, cartQty = 0 }: POSProductCardPr
       <p className={`text-[18px] font-medium leading-tight flex-1 ${inCart ? "text-[#A85A20] font-semibold" : "text-[#1F1712]"}`}>
         {product.name}
       </p>
-      <p className="text-[16px] font-bold text-[#D17A3B] mt-1">${product.price.toFixed(2)}</p>
+      <p className="text-[16px] font-bold text-[#D17A3B] mt-1">₹{product.price.toFixed(2)}</p>
     </button>
   );
 }

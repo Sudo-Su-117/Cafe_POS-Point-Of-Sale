@@ -3,27 +3,36 @@
 import React, { useState, useEffect } from "react";
 import { X, Search, Package, DollarSign, TrendingUp, Pencil, ChevronRight, Plus } from "lucide-react";
 import { Category } from "./types";
-import { PRODUCTS_BY_CATEGORY, Product } from "./categoryProducts";
+import { Product } from "./categoryProducts";
 import { ProductModal, ProductAvatar } from "./ProductModal";
 
 interface CategoryDetailDrawerProps {
   category: Category;
+  products: Product[];
+  token: string | null;
+  onRefresh: () => void;
   onClose: () => void;
   onEdit: (cat: Category) => void;
 }
 
-let pIdCounter = 1000;
-const newPId = () => `np-${pIdCounter++}`;
-
-export function CategoryDetailDrawer({ category, onClose, onEdit }: CategoryDetailDrawerProps) {
+export function CategoryDetailDrawer({
+  category,
+  products: propProducts,
+  token,
+  onRefresh,
+  onClose,
+  onEdit,
+}: CategoryDetailDrawerProps) {
   const [search, setSearch]   = useState("");
   const [filter, setFilter]   = useState<"all" | "Active" | "Inactive">("all");
   const [visible, setVisible] = useState(false);
 
-  // local product state — initialised from seed, mutable within the session
-  const [products, setProducts] = useState<Product[]>(
-    () => PRODUCTS_BY_CATEGORY[category.id] ?? []
-  );
+  // local product state — synchronized with prop
+  const [products, setProducts] = useState<Product[]>(propProducts);
+
+  useEffect(() => {
+    setProducts(propProducts);
+  }, [propProducts]);
 
   // product modal state
   const [productModal, setProductModal] = useState<{
@@ -44,24 +53,100 @@ export function CategoryDetailDrawer({ category, onClose, onEdit }: CategoryDeta
   };
 
   // ── CRUD ─────────────────────────────────────────────────────────────────────
-  const handleSaveProduct = (data: Omit<Product, "id">) => {
-    if (productModal?.mode === "add") {
-      setProducts(prev => [...prev, { id: newPId(), ...data }]);
-      showToast(`"${data.name}" added`);
-    } else if (productModal?.mode === "edit" && productModal.product) {
-      const id = productModal.product.id;
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-      showToast(`"${data.name}" updated`);
+  const handleSaveProduct = async (data: Omit<Product, "id">) => {
+    if (!token) {
+      alert("Authentication token not found.");
+      return;
+    }
+
+    try {
+      if (productModal?.mode === "add") {
+        const response = await fetch("http://localhost:3000/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            categoryId: category.id,
+            name: data.name,
+            price: data.price,
+            unitOfMeasure: data.unitOfMeasure,
+            taxRate: data.tax,
+            description: data.description,
+            imageUrl: data.image || undefined,
+            isActive: data.status === "Active",
+            isKdsVisible: true,
+          }),
+        });
+
+        if (response.ok) {
+          showToast(`"${data.name}" added`);
+          onRefresh();
+        } else {
+          const err = await response.json();
+          alert(`Error adding product: ${err.message || response.statusText}`);
+        }
+      } else if (productModal?.mode === "edit" && productModal.product) {
+        const id = productModal.product.id;
+        const response = await fetch(`http://localhost:3000/products/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            categoryId: category.id,
+            name: data.name,
+            price: data.price,
+            unitOfMeasure: data.unitOfMeasure,
+            taxRate: data.tax,
+            description: data.description,
+            imageUrl: data.image || undefined,
+            isActive: data.status === "Active",
+          }),
+        });
+
+        if (response.ok) {
+          showToast(`"${data.name}" updated`);
+          onRefresh();
+        } else {
+          const err = await response.json();
+          alert(`Error updating product: ${err.message || response.statusText}`);
+        }
+      }
+    } catch (err) {
+      console.error("Save product error:", err);
+      alert("Failed to connect to backend server.");
     }
     setProductModal(null);
   };
 
-  const handleDeleteProduct = () => {
-    if (!productModal?.product) return;
+  const handleDeleteProduct = async () => {
+    if (!productModal?.product || !token) return;
+    const id = productModal.product.id;
     const name = productModal.product.name;
-    setProducts(prev => prev.filter(p => p.id !== productModal.product!.id));
+
+    try {
+      const response = await fetch(`http://localhost:3000/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        showToast(`"${name}" deleted`);
+        onRefresh();
+      } else {
+        const err = await response.json();
+        alert(`Error deleting product: ${err.message || response.statusText}`);
+      }
+    } catch (err) {
+      console.error("Delete product error:", err);
+      alert("Failed to connect to backend server.");
+    }
     setProductModal(null);
-    showToast(`"${name}" deleted`);
   };
 
   // ── derived ───────────────────────────────────────────────────────────────────
@@ -132,7 +217,7 @@ export function CategoryDetailDrawer({ category, onClose, onEdit }: CategoryDeta
           {[
             { icon: Package,    label: "Total",     value: String(products.length), color: category.color },
             { icon: TrendingUp, label: "Active",    value: String(activeCount),     color: "var(--success)"      },
-            { icon: DollarSign, label: "Avg Price", value: `$${avgPrice}`,          color: "var(--primary)"      },
+            { icon: DollarSign, label: "Avg Price", value: `₹${avgPrice}`,          color: "var(--primary)"      },
           ].map(s => {
             const Icon = s.icon;
             return (
@@ -239,7 +324,7 @@ export function CategoryDetailDrawer({ category, onClose, onEdit }: CategoryDeta
                   {/* Price + arrow */}
                   <div className="text-right shrink-0 flex flex-col items-end gap-1">
                     <p className="text-[16px] font-bold text-text-heading">
-                      ${product.price.toFixed(2)}
+                      ₹{product.price.toFixed(2)}
                     </p>
                     <ChevronRight size={14} className="text-border-custom group-hover:text-primary transition-colors" />
                   </div>

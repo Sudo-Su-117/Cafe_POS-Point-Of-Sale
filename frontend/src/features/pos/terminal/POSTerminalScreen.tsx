@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { POSProduct } from "@/lib/pos-product-types";
 import { CartItem } from "@/lib/pos-order-utils";
 import { POSHeader } from "./POSHeader";
@@ -10,10 +10,11 @@ import { FloorPopup } from "@/features/pos/components/FloorPopup";
 import { PaymentModal } from "@/features/pos/components/PaymentModal";
 
 interface Table {
-  id: number;
+  id: string;
   number: string;
   seats: number;
   hasOrder: boolean;
+  status: string;
 }
 
 export function POSTerminalScreen() {
@@ -23,6 +24,50 @@ export function POSTerminalScreen() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [kitchenSent, setKitchenSent] = useState(false);
   const [paymentTotal, setPaymentTotal] = useState(0);
+  const [tables, setTables] = useState<any[]>([]);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Auto-login to obtain JWT token
+  useEffect(() => {
+    async function autoLogin() {
+      try {
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "admin@cafe.com",
+            password: "Admin@123",
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.accessToken);
+        }
+      } catch (err) {
+        console.error("POS Terminal auto-login error:", err);
+      }
+    }
+    autoLogin();
+  }, []);
+
+  // Fetch tables from backend
+  useEffect(() => {
+    async function fetchTables() {
+      if (!token) return;
+      try {
+        const res = await fetch("http://localhost:3000/tables", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTables(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tables", err);
+      }
+    }
+    fetchTables();
+  }, [token]);
 
   const addToCart = (product: POSProduct) => {
     setCartItems((prev) => {
@@ -69,7 +114,7 @@ export function POSTerminalScreen() {
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (method: string, amount: number) => {
     setCartItems([]);
     setShowPayment(false);
     setSelectedTable(null);
@@ -115,6 +160,7 @@ export function POSTerminalScreen() {
 
       {showFloor && (
         <FloorPopup
+          tables={tables}
           onClose={() => setShowFloor(false)}
           onSelectTable={(t) => setSelectedTable(t)}
         />
@@ -124,7 +170,10 @@ export function POSTerminalScreen() {
         <PaymentModal
           total={paymentTotal}
           onClose={() => setShowPayment(false)}
-          onSuccess={handlePaymentSuccess}
+          onSuccess={() => {}}
+          onPaySuccess={handlePaymentSuccess}
+          cartItems={cartItems.map(i => ({ name: i.name, price: i.price, quantity: i.quantity }))}
+          tableName={selectedTable?.number}
         />
       )}
     </div>

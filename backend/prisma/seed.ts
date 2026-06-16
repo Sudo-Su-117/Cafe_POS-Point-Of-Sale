@@ -213,7 +213,7 @@ async function main() {
     const p = await prisma.product.create({
       data: {
         name: prod.name,
-        price: prod.price,
+        price: prod.price * 80, // Scale to Rupees
         description: prod.description,
         categoryId: categoriesMap[prod.categoryName],
         taxRate: 5.00,
@@ -245,7 +245,7 @@ async function main() {
       code: 'WELCOME10',
       description: '10% off for new customers',
       discountPercentage: 10,
-      minOrderAmount: 10,
+      minOrderAmount: 800, // scaled to Rupees
       expiryDate: new Date('2027-12-31'),
       maxUsageCount: 1000,
     },
@@ -256,7 +256,7 @@ async function main() {
       code: 'WEEKEND15',
       description: '15% off weekend orders',
       discountPercentage: 15,
-      minOrderAmount: 20,
+      minOrderAmount: 1600, // scaled to Rupees
       expiryDate: new Date('2027-12-31'),
       maxUsageCount: 500,
     },

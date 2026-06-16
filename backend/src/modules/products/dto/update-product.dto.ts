@@ -107,4 +107,14 @@ export class UpdateProductDto {
   @Type(() => Boolean)
   @IsBoolean({ message: 'isKdsVisible must be a boolean' })
   isKdsVisible?: boolean;
+
+  @ApiProperty({
+    description: 'Product active status in the menu',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: 'isActive must be a boolean' })
+  isActive?: boolean;
 }

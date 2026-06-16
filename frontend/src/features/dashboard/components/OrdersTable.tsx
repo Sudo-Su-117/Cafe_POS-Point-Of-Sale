@@ -85,7 +85,7 @@ export function OrdersTable({ orders = [], isLoading = false }: OrdersTableProps
                     {row.staff}
                   </td>
                   <td className="px-4 py-2 text-[14px] font-bold text-text-heading font-sans">
-                    ${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <span

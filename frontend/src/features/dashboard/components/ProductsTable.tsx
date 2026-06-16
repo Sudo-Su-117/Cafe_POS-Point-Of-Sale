@@ -77,7 +77,7 @@ export function ProductsTable({ products = [], isLoading = false }: ProductsTabl
                     {row.units}
                   </td>
                   <td className="px-4 py-2 text-[14px] font-bold text-success text-right">
-                    ${row.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{row.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               ))}

@@ -152,7 +152,7 @@ export default function Home() {
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <StatCard
           title="Total Revenue"
-          value={salesData ? `$${salesData.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}
+          value={salesData ? `₹${salesData.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "₹0.00"}
           deltaText={formatGrowthText(salesData?.revenueGrowth)}
           isPositive={(salesData?.revenueGrowth || 0) >= 0}
           icon={DollarSign}
@@ -168,7 +168,7 @@ export default function Home() {
         />
         <StatCard
           title="Avg. Ticket Value"
-          value={salesData ? `$${salesData.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}
+          value={salesData ? `₹${salesData.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "₹0.00"}
           deltaText={formatGrowthText(salesData?.aovGrowth)}
           isPositive={(salesData?.aovGrowth || 0) >= 0}
           icon={CreditCard}

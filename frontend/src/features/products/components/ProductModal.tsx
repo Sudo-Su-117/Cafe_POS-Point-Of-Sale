@@ -8,17 +8,19 @@ import { X } from "lucide-react";
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: ProductFormData) => void;
+  onSave: (product: any) => void;
   product?: Product | null;
+  categories?: Array<{ id: string; name: string }>;
 }
 
 const CATEGORIES: Product["category"][] = ["Espresso", "Cold Brew", "Pastries", "Sandwiches", "Tea"];
 const UOMS = ["Cup", "Can", "Piece", "Plate", "Bottle"];
 const TAXES = ["5%", "8%", "10%", "0%"];
 
-export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
+export function ProductModal({ isOpen, onClose, onSave, product, categories = [] }: ProductModalProps) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Product["category"]>("Espresso");
+  const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState("");
   const [uom, setUom] = useState("Cup");
   const [tax, setTax] = useState("8%");
@@ -34,8 +36,19 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       setUom(product?.uom ?? "Cup");
       setTax(product?.tax ?? "8%");
       setActive(product?.active ?? true);
+
+      // Initialize categoryId
+      const p = product as any;
+      if (p?.categoryId) {
+        setCategoryId(p.categoryId);
+      } else if (categories && categories.length > 0) {
+        const matched = categories.find(c => c.name === (product?.category ?? "Espresso"));
+        setCategoryId(matched ? matched.id : categories[0].id);
+      } else {
+        setCategoryId("");
+      }
     }
-  }, [isOpen, product]);
+  }, [isOpen, product, categories]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -47,6 +60,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       id: product?.id,
       name: name.trim(),
       category,
+      categoryId: categoryId || undefined,
       price: parseFloat(price),
       uom,
       tax,
@@ -98,21 +112,36 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 Category
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as Product["category"])}
+                value={categoryId}
+                onChange={(e) => {
+                  const targetId = e.target.value;
+                  setCategoryId(targetId);
+                  const matched = categories.find(c => c.id === targetId);
+                  if (matched) {
+                    setCategory(matched.name as any);
+                  }
+                }}
                 className="h-[42px] px-3.5 rounded-[10px] bg-white border border-border-custom text-[14px] font-semibold text-text-heading outline-none focus:border-primary transition-all cursor-pointer"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
             <div className="flex flex-col">
               <label className="text-[13px] font-bold text-text-body mb-1.5 uppercase tracking-wider">
-                Price ($) *
+                Price (₹) *
               </label>
               <input
                 type="number"
@@ -121,7 +150,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 required
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="e.g. 5.50"
+                placeholder="e.g. 200.00"
                 className="h-[42px] px-3.5 rounded-[10px] bg-white border border-border-custom text-[14px] font-medium text-text-heading outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-text-muted"
               />
             </div>

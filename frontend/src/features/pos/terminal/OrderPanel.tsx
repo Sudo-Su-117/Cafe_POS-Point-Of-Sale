@@ -69,7 +69,7 @@ export function OrderPanel({
               <span className="text-xl shrink-0">{item.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-bold text-[#1F1712] truncate">{item.name}</p>
-                <p className="text-[12px] text-[#D17A3B] font-semibold">${item.price.toFixed(2)}</p>
+                <p className="text-[12px] text-[#D17A3B] font-semibold">₹{item.price.toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -89,7 +89,7 @@ export function OrderPanel({
                 </button>
               </div>
               <span className="text-[13px] font-bold text-[#1F1712] w-14 text-right shrink-0">
-                ${(item.price * item.quantity).toFixed(2)}
+                ₹{(item.price * item.quantity).toFixed(2)}
               </span>
               <button
                 type="button"
@@ -106,23 +106,23 @@ export function OrderPanel({
       <div className="px-5 py-4 border-t border-[#D7C9BB] flex flex-col gap-2.5 shrink-0">
         <div className="flex justify-between text-[13px] text-[#8E7A68] font-medium">
           <span>Subtotal</span>
-          <span className="text-[#1F1712] font-semibold">${subtotal.toFixed(2)}</span>
+          <span className="text-[#1F1712] font-semibold">₹{subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-[13px] text-[#8E7A68] font-medium">
           <span>Tax (8%)</span>
-          <span className="text-[#1F1712] font-semibold">${tax.toFixed(2)}</span>
+          <span className="text-[#1F1712] font-semibold">₹{tax.toFixed(2)}</span>
         </div>
         {appliedCoupon && (
           <div className="flex justify-between text-[13px] font-semibold text-[#769E4D]">
             <span className="flex items-center gap-1">
               <Tag size={12} /> {appliedCoupon.code}
             </span>
-            <span>-${discountAmt.toFixed(2)}</span>
+            <span>-₹{discountAmt.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between text-[16px] font-bold text-[#1F1712] border-t border-[#D7C9BB] pt-2.5 mt-0.5">
           <span>Total</span>
-          <span className="text-[#D17A3B]">${total.toFixed(2)}</span>
+          <span className="text-[#D17A3B]">₹{total.toFixed(2)}</span>
         </div>
 
         <div>
@@ -176,7 +176,7 @@ export function OrderPanel({
             disabled={items.length === 0}
             className="flex-1 flex items-center justify-center gap-2 bg-[#D17A3B] hover:bg-[#BF6D34] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[13px] font-bold py-2.5 rounded-[12px] transition-colors"
           >
-            <Send size={15} /> Pay ${total.toFixed(2)}
+            <Send size={15} /> Pay ₹{total.toFixed(2)}
           </button>
         </div>
       </div>

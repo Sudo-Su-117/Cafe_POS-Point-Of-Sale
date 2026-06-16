@@ -87,7 +87,10 @@ export class ProductsService {
     const limit = Math.min(100, Math.max(1, filters.limit || 10));
     const skip = (page - 1) * limit;
 
-    const whereClause: any = { isActive: true };
+    const whereClause: any = {};
+    if (filters.isActive !== undefined) {
+      whereClause.isActive = filters.isActive;
+    }
 
     if (filters.categoryId) {
       whereClause.categoryId = filters.categoryId;
@@ -136,10 +139,6 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    if (!product.isActive) {
-      throw new NotFoundException('Product not found');
-    }
-
     return this.formatProduct(product);
   }
 
@@ -151,10 +150,6 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    if (!product.isActive) {
       throw new NotFoundException('Product not found');
     }
 
@@ -201,6 +196,8 @@ export class ProductsService {
       dataToUpdate.preparationTime = updateProductDto.preparationTime;
     if (updateProductDto.isKdsVisible !== undefined)
       dataToUpdate.isKdsVisible = updateProductDto.isKdsVisible;
+    if (updateProductDto.isActive !== undefined)
+      dataToUpdate.isActive = updateProductDto.isActive;
 
     const updatedProduct = await this.prisma.product.update({
       where: { id },

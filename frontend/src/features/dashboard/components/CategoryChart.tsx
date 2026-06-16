@@ -95,7 +95,7 @@ export function CategoryChart({ categories = [], totalRevenue = 0, isLoading = f
           <span className="text-[24px] font-bold text-text-heading mt-0.5 leading-none">
             {hoveredIdx !== null
               ? categories[hoveredIdx].percentage + "%"
-              : `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+              : `₹${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
           </span>
         </div>
       </div>
@@ -123,7 +123,7 @@ export function CategoryChart({ categories = [], totalRevenue = 0, isLoading = f
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[13px] font-medium text-text-muted font-sans">
-                  ${cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₹{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[14px] font-bold text-text-heading font-sans w-8 text-right">
                   {cat.percentage}%

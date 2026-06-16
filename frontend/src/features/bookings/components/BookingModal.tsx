@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import {
+  Booking,
   BookingFormData,
   BookingStatus,
   BOOKING_STATUS_LABELS,
@@ -15,6 +16,7 @@ interface BookingModalProps {
   onClose: () => void;
   onSave: (data: BookingFormData) => void;
   booking?: Booking | null; // if provided → edit mode
+  existingBookings?: Booking[];
 }
 
 const inputClass =
@@ -22,7 +24,7 @@ const inputClass =
 
 const labelClass = "text-[14px] font-medium text-text-heading mb-1.5";
 
-export function BookingModal({ isOpen, onClose, onSave, booking }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, onSave, booking, existingBookings = [] }: BookingModalProps) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -33,6 +35,29 @@ export function BookingModal({ isOpen, onClose, onSave, booking }: BookingModalP
   const [nameError, setNameError] = useState("");
   const [partySizeError, setPartySizeError] = useState("");
   const [dateTimeError, setDateTimeError] = useState("");
+
+  const checkOverlap = (
+    selectedTable: string,
+    selectedDate: string,
+    selectedTime: string
+  ): boolean => {
+    if (!selectedDate || !selectedTime || !selectedTable) return false;
+    const [selH, selM] = selectedTime.split(":").map(Number);
+    const selMin = selH * 60 + selM;
+
+    return existingBookings.some((b) => {
+      if (booking && b.id === booking.id) {
+        return false;
+      }
+      // Only check active bookings (confirmed or pending) on the same table and same date
+      if (b.table !== selectedTable || b.date !== selectedDate || b.status === "cancelled") {
+        return false;
+      }
+      const [bH, bM] = b.time.split(":").map(Number);
+      const bMin = bH * 60 + bM;
+      return Math.abs(selMin - bMin) < 120; // 2 hours overlap
+    });
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -87,8 +112,8 @@ export function BookingModal({ isOpen, onClose, onSave, booking }: BookingModalP
       return;
     }
 
-    if (!date || !time) {
-      setDateTimeError("Date and time are required.");
+    if (checkOverlap(table, date, time)) {
+      setDateTimeError("This table is already booked within a 2-hour window of the selected time.");
       return;
     }
 
@@ -211,11 +236,14 @@ export function BookingModal({ isOpen, onClose, onSave, booking }: BookingModalP
                 onChange={(e) => setTable(e.target.value)}
                 className={`${inputClass} cursor-pointer`}
               >
-                {TABLE_OPTIONS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
+                {TABLE_OPTIONS.map((t) => {
+                  const isBlocked = checkOverlap(t, date, time);
+                  return (
+                    <option key={t} value={t} disabled={isBlocked}>
+                      {t} {isBlocked ? "(Already Booked)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>

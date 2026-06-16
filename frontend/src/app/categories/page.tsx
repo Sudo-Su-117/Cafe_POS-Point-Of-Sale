@@ -10,14 +10,14 @@ import { CategoryDetailDrawer } from "@/features/categories/components/CategoryD
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 const SEED_CATEGORIES: Category[] = [
-  { id: "1", name: "Espresso",   color: "#C9783A", image: null, productCount: 8,  revenue: "$2,958", createdAt: "Jan 12, 2026" },
-  { id: "2", name: "Cold Brew",  color: "#5B8FA8", image: null, productCount: 5,  revenue: "$1,690", createdAt: "Jan 14, 2026" },
-  { id: "3", name: "Pastries",   color: "#D6A144", image: null, productCount: 11, revenue: "$1,521", createdAt: "Jan 15, 2026" },
-  { id: "4", name: "Sandwiches", color: "#789658", image: null, productCount: 7,  revenue: "$1,268", createdAt: "Feb 2, 2026"  },
-  { id: "5", name: "Tea",        color: "#9B6A9B", image: null, productCount: 6,  revenue: "$1,014", createdAt: "Feb 10, 2026" },
-  { id: "6", name: "Drinks",     color: "#4A7C8A", image: null, productCount: 9,  revenue: "$876",   createdAt: "Mar 1, 2026"  },
-  { id: "7", name: "Snacks",     color: "#D55C4C", image: null, productCount: 4,  revenue: "$543",   createdAt: "Mar 18, 2026" },
-  { id: "8", name: "Seasonal",   color: "#866443", image: null, productCount: 3,  revenue: "$321",   createdAt: "Apr 5, 2026"  },
+  { id: "1", name: "Espresso",   color: "#C9783A", image: null, productCount: 8,  revenue: "₹2,958", createdAt: "Jan 12, 2026" },
+  { id: "2", name: "Cold Brew",  color: "#5B8FA8", image: null, productCount: 5,  revenue: "₹1,690", createdAt: "Jan 14, 2026" },
+  { id: "3", name: "Pastries",   color: "#D6A144", image: null, productCount: 11, revenue: "₹1,521", createdAt: "Jan 15, 2026" },
+  { id: "4", name: "Sandwiches", color: "#789658", image: null, productCount: 7,  revenue: "₹1,268", createdAt: "Feb 2, 2026"  },
+  { id: "5", name: "Tea",        color: "#9B6A9B", image: null, productCount: 6,  revenue: "₹1,014", createdAt: "Feb 10, 2026" },
+  { id: "6", name: "Drinks",     color: "#4A7C8A", image: null, productCount: 9,  revenue: "₹876",   createdAt: "Mar 1, 2026"  },
+  { id: "7", name: "Snacks",     color: "#D55C4C", image: null, productCount: 4,  revenue: "₹543",   createdAt: "Mar 18, 2026" },
+  { id: "8", name: "Seasonal",   color: "#866443", image: null, productCount: 3,  revenue: "₹321",   createdAt: "Apr 5, 2026"  },
 ];
 
 type SortKey = "name" | "products" | "revenue";
@@ -28,6 +28,7 @@ const newId = () => String(idCounter++);
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function CategoriesPage() {
   const [categories, setCategories]   = useState<Category[]>([]);
+  const [allProductsForDrawer, setAllProductsForDrawer] = useState<any[]>([]);
   const [search, setSearch]           = useState("");
   const [sort, setSort]               = useState<SortKey>("name");
   const [modal, setModal]             = useState<"add" | "edit" | null>(null);
@@ -80,6 +81,21 @@ export default function CategoriesPage() {
         const activeProds = productsData.data || [];
         const reportCats = reportData.categories || [];
 
+        const mappedProducts = activeProds.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: Number(p.price),
+          unitOfMeasure: p.unitOfMeasure || "per piece",
+          tax: Number(p.taxRate || 0),
+          description: p.description || "",
+          image: p.imageUrl 
+            ? (p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:3000${p.imageUrl}`)
+            : null,
+          status: p.isActive ? "Active" : "Inactive",
+          categoryId: p.categoryId,
+        }));
+        setAllProductsForDrawer(mappedProducts);
+
         const mapped: Category[] = activeCats.map((cat: any) => {
           const productCount = activeProds.filter((p: any) => p.categoryId === cat.id).length;
           const matchedReport = reportCats.find((c: any) => c.name.toLowerCase() === cat.name.toLowerCase());
@@ -96,7 +112,7 @@ export default function CategoriesPage() {
               ? (cat.imageUrl.startsWith("http") ? cat.imageUrl : `http://localhost:3000${cat.imageUrl}`)
               : null,
             productCount,
-            revenue: `$${revenueValue.toLocaleString()}`,
+            revenue: `₹${revenueValue.toLocaleString()}`,
             createdAt: formattedDate,
           };
         });
@@ -233,7 +249,7 @@ export default function CategoriesPage() {
     if (sort === "name")     list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "products") list = [...list].sort((a, b) => b.productCount - a.productCount);
     if (sort === "revenue")  list = [...list].sort((a, b) => {
-      const n = (s: string) => parseFloat(s.replace(/[$,k]/g, "")) * (s.includes("k") ? 1000 : 1);
+      const n = (s: string) => parseFloat(s.replace(/[₹$,k]/g, "")) * (s.includes("k") ? 1000 : 1);
       return n(b.revenue) - n(a.revenue);
     });
     return list;
@@ -426,6 +442,9 @@ export default function CategoriesPage() {
       {viewTarget && (
         <CategoryDetailDrawer
           category={viewTarget}
+          products={allProductsForDrawer.filter((p: any) => p.categoryId === viewTarget.id)}
+          token={token}
+          onRefresh={() => refreshData(token!)}
           onClose={() => setViewTarget(null)}
           onEdit={cat => { setViewTarget(null); openEdit(cat); }}
         />
