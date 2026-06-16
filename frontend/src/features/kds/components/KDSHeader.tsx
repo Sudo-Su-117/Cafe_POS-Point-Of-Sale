@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChefHat, Wifi, Monitor, LogOut } from "lucide-react";
+import { ChefHat, Wifi, Monitor, LogOut, Sparkles } from "lucide-react";
 import { KDSFilterStage, KDSStage, KDS_STAGE_LABELS } from "@/lib/kds-types";
 
 interface KDSHeaderProps {
   counts: Record<KDSStage, number>;
   filter: KDSFilterStage;
   onFilterChange: (filter: KDSFilterStage) => void;
+  onSimulateOrder?: () => void;
 }
 
 const counterConfig: {
@@ -41,7 +42,7 @@ const counterConfig: {
   },
 ];
 
-export function KDSHeader({ counts, filter, onFilterChange }: KDSHeaderProps) {
+export function KDSHeader({ counts, filter, onFilterChange, onSimulateOrder }: KDSHeaderProps) {
   const [time, setTime] = useState("");
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function KDSHeader({ counts, filter, onFilterChange }: KDSHeaderProps) {
   }, []);
 
   return (
-    <header className="h-[72px] shrink-0 flex flex-wrap items-center justify-between gap-4 px-7 border-b border-kds-border bg-kds-bg shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
+    <header className="h-[72px] shrink-0 flex flex-wrap items-center justify-between gap-4 px-7 border-b border-kds-border bg-kds-bg shadow-[0_2px_8px_rgba(0,0,0,0.06)] theme-transition">
       <div className="flex items-center gap-3">
         <ChefHat size={28} strokeWidth={1.75} className="text-kds-amber" />
         <div>
@@ -77,14 +78,14 @@ export function KDSHeader({ counts, filter, onFilterChange }: KDSHeaderProps) {
               type="button"
               onClick={() => onFilterChange(isActive ? "all" : filterKey)}
               aria-pressed={isActive}
-              className={`kds-focus-ring flex items-center gap-3 px-4 py-2 rounded-xl border transition-all duration-200 ${bgClass} ${
+              className={`kds-focus-ring flex items-center gap-3 px-4 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer ${bgClass} ${
                 isActive ? "ring-2 ring-offset-1 ring-offset-kds-bg ring-current scale-[1.02]" : "hover:brightness-110"
               } ${textClass}`}
             >
-              <span className="text-[12px] font-bold uppercase tracking-wider opacity-80">
+              <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
                 {KDS_STAGE_LABELS[stage]}
               </span>
-              <span className="text-[24px] font-bold tabular-nums leading-none">
+              <span className="text-[22px] font-bold tabular-nums leading-none">
                 {counts[stage]}
               </span>
             </button>
@@ -92,7 +93,19 @@ export function KDSHeader({ counts, filter, onFilterChange }: KDSHeaderProps) {
         })}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
+        {/* Simulate Order Button */}
+        {onSimulateOrder && (
+          <button
+            type="button"
+            onClick={onSimulateOrder}
+            className="kds-focus-ring flex items-center gap-2 h-9 px-4 rounded-xl bg-kds-amber hover:bg-kds-amber/90 text-kds-action-primary-text text-[12px] font-bold transition-all shadow-[0_2px_6px_rgba(217,119,6,0.15)] active:scale-[0.97] cursor-pointer"
+          >
+            <Sparkles size={14} className="animate-pulse" />
+            <span>Simulate Order</span>
+          </button>
+        )}
+
         <div className="h-9 px-3 rounded-full bg-kds-green/10 flex items-center gap-2">
           <Wifi size={14} className="text-kds-online" />
           <span className="text-[12px] font-semibold text-kds-online">Online</span>
@@ -104,16 +117,16 @@ export function KDSHeader({ counts, filter, onFilterChange }: KDSHeaderProps) {
           aria-label="Open POS"
           className="kds-focus-ring w-9 h-9 rounded-lg bg-kds-elevated border border-kds-border flex items-center justify-center text-kds-muted hover:text-kds-text hover:bg-kds-surface transition-colors"
         >
-          <Monitor size={16} />
+          <Monitor size={15} />
         </Link>
 
-        <button
-          type="button"
+        <Link
+          href="/login"
           aria-label="Logout"
           className="kds-focus-ring w-9 h-9 rounded-lg bg-kds-elevated border border-kds-border flex items-center justify-center text-kds-muted hover:text-kds-text hover:bg-kds-surface transition-colors"
         >
-          <LogOut size={16} />
-        </button>
+          <LogOut size={15} />
+        </Link>
       </div>
     </header>
   );

@@ -6,6 +6,7 @@ import {
   KDSOrder,
   KDSStage,
   KDSViewMode,
+  KDSStation,
   sortOrders,
 } from "@/lib/kds-types";
 import { INITIAL_KDS_ORDERS } from "@/lib/mock-kds-orders";
@@ -16,12 +17,14 @@ import { KDSKanbanBoard } from "@/features/kds/components/KDSKanbanBoard";
 import { KDSFooter } from "@/features/kds/components/KDSFooter";
 
 const VIEW_STORAGE_KEY = "brewhouse-kds-view";
+const STATION_STORAGE_KEY = "brewhouse-kds-station";
 
 export default function KDSPage() {
   const [orders, setOrders] = useState<KDSOrder[]>(INITIAL_KDS_ORDERS);
   const [filter, setFilter] = useState<KDSFilterStage>("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<KDSViewMode>("kanban");
+  const [activeStation, setActiveStation] = useState<KDSStation>("all");
   const [announcement, setAnnouncement] = useState("");
   const prevCountRef = useRef(orders.length);
 
@@ -29,6 +32,19 @@ export default function KDSPage() {
     try {
       const storedView = localStorage.getItem(VIEW_STORAGE_KEY);
       if (storedView === "kanban" || storedView === "grid") setViewMode(storedView);
+    } catch {
+      /* ignore */
+    }
+    try {
+      const storedStation = localStorage.getItem(STATION_STORAGE_KEY);
+      if (
+        storedStation === "all" ||
+        storedStation === "kitchen" ||
+        storedStation === "beverage" ||
+        storedStation === "bakery"
+      ) {
+        setActiveStation(storedStation);
+      }
     } catch {
       /* ignore */
     }
@@ -45,6 +61,15 @@ export default function KDSPage() {
     setViewMode(mode);
     try {
       localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleStationChange = (station: KDSStation) => {
+    setActiveStation(station);
+    try {
+      localStorage.setItem(STATION_STORAGE_KEY, station);
     } catch {
       /* ignore */
     }
@@ -105,13 +130,99 @@ export default function KDSPage() {
     );
   };
 
+  // Play audio chime when a simulated order arrives
+  const playOrderChime = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      const playTone = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, start);
+        
+        gain.gain.setValueAtTime(0.08, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + duration - 0.05);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+      
+      const now = ctx.currentTime;
+      playTone(659.25, now, 0.25); // E5
+      playTone(880.00, now + 0.12, 0.35); // A5
+    } catch (err) {
+      console.warn("Could not play KDS chime:", err);
+    }
+  };
+
+  // Simulate new order arrival
+  const handleSimulateOrder = () => {
+    const tableNum = Math.floor(Math.random() * 12) + 1;
+    const tableName = Math.random() > 0.25 ? `Table ${tableNum}` : "Bar";
+    const orderNum = Math.floor(Math.random() * 9000) + 1000;
+    const orderId = `#${orderNum}`;
+
+    const menuPool = [
+      { name: "Flat White", station: "beverage" as const },
+      { name: "Butter Croissant", station: "bakery" as const },
+      { name: "Avocado Toast", station: "kitchen" as const },
+      { name: "Americano", station: "beverage" as const },
+      { name: "Grilled Cheese", station: "kitchen" as const },
+      { name: "Cappuccino", station: "beverage" as const },
+      { name: "Blueberry Muffin", station: "bakery" as const },
+      { name: "Latte", station: "beverage" as const },
+      { name: "Banana Bread", station: "bakery" as const },
+      { name: "Espresso", station: "beverage" as const },
+      { name: "Sandwich", station: "kitchen" as const },
+      { name: "Cold Brew", station: "beverage" as const },
+    ];
+
+    const itemsCount = Math.floor(Math.random() * 3) + 1;
+    const items = [];
+    const selectedIndices = new Set<number>();
+
+    for (let i = 0; i < itemsCount; i++) {
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * menuPool.length);
+      } while (selectedIndices.has(idx));
+      selectedIndices.add(idx);
+
+      const poolItem = menuPool[idx];
+      items.push({
+        id: i + 1,
+        name: poolItem.name,
+        quantity: Math.floor(Math.random() * 2) + 1,
+        done: false,
+        station: poolItem.station,
+      });
+    }
+
+    const newOrder: KDSOrder = {
+      id: orderId,
+      table: tableName,
+      stage: "to-cook",
+      elapsed: 0,
+      note: Math.random() > 0.7 ? "Dine in - hot kitchen fast" : undefined,
+      items,
+    };
+
+    setOrders((prev) => [newOrder, ...prev]);
+    playOrderChime();
+  };
+
   const counts = useMemo(
     () => ({
-      "to-cook": orders.filter((o) => o.stage === "to-cook").length,
-      preparing: orders.filter((o) => o.stage === "preparing").length,
-      ready: orders.filter((o) => o.stage === "ready").length,
+      "to-cook": orders.filter((o) => o.stage === "to-cook" && (activeStation === "all" || o.items.some(i => i.station === activeStation))).length,
+      preparing: orders.filter((o) => o.stage === "preparing" && (activeStation === "all" || o.items.some(i => i.station === activeStation))).length,
+      ready: orders.filter((o) => o.stage === "ready" && (activeStation === "all" || o.items.some(i => i.station === activeStation))).length,
     }),
-    [orders]
+    [orders, activeStation]
   );
 
   const avgWaitMinutes = useMemo(() => {
@@ -121,6 +232,11 @@ export default function KDSPage() {
 
   const filtered = useMemo(() => {
     const matched = orders.filter((o) => {
+      // Check if order contains items for active station
+      const hasStationItems =
+        activeStation === "all" || o.items.some((i) => i.station === activeStation);
+      if (!hasStationItems) return false;
+
       const matchStage = filter === "all" || o.stage === filter;
       const q = search.toLowerCase();
       const matchSearch =
@@ -131,7 +247,7 @@ export default function KDSPage() {
       return matchStage && matchSearch;
     });
     return sortOrders(matched, "elapsed");
-  }, [orders, filter, search]);
+  }, [orders, filter, search, activeStation]);
 
   const highlightStage = filter !== "all" ? filter : null;
 
@@ -171,7 +287,12 @@ export default function KDSPage() {
         {announcement}
       </div>
 
-      <KDSHeader counts={counts} filter={filter} onFilterChange={handleFilterChange} />
+      <KDSHeader
+        counts={counts}
+        filter={filter}
+        onFilterChange={handleFilterChange}
+        onSimulateOrder={handleSimulateOrder}
+      />
       <KDSToolbar
         search={search}
         onSearchChange={setSearch}
@@ -179,6 +300,8 @@ export default function KDSPage() {
         onFilterChange={handleFilterChange}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
+        activeStation={activeStation}
+        onStationChange={handleStationChange}
       />
 
       <main
@@ -191,8 +314,8 @@ export default function KDSPage() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-kds-muted gap-3">
             <span className="text-4xl" aria-hidden>🍳</span>
-            <p className="text-[16px] font-semibold text-kds-text">Waiting for orders from POS</p>
-            <p className="text-[13px] font-medium">No orders match your current filter</p>
+            <p className="text-[16px] font-semibold text-kds-text">No active orders</p>
+            <p className="text-[13px] font-medium">Try simulating one or changing station filters</p>
           </div>
         ) : viewMode === "kanban" ? (
           <KDSKanbanBoard
@@ -202,6 +325,7 @@ export default function KDSPage() {
             onToggleItem={toggleItem}
             onMoveOrder={moveOrder}
             highlightStage={highlightStage}
+            activeStation={activeStation}
           />
         ) : (
           <div
@@ -215,13 +339,14 @@ export default function KDSPage() {
                 onAdvanceStage={advanceStage}
                 onDismiss={dismissOrder}
                 onToggleItem={toggleItem}
+                activeStation={activeStation}
               />
             ))}
           </div>
         )}
       </main>
 
-      <KDSFooter activeCount={orders.length} avgWaitMinutes={avgWaitMinutes} />
+      <KDSFooter activeCount={filtered.length} avgWaitMinutes={avgWaitMinutes} />
     </>
   );
 }

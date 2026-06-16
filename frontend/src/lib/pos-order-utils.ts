@@ -12,7 +12,7 @@ export const TAX_RATE = 0.08;
 // BREW10 = 10% off, WELCOME5 = $5 off (fixed), VIP20 = 20% off
 export const COUPON_CODES: Record<string, number> = {
   BREW10:   0.10,  // 10% — percentage (value < 1)
-  WELCOME5: 5,     // $5 flat off — fixed (value ≥ 1)
+  WELCOME5: 400,   // ₹400 flat off — fixed (value ≥ 1)
   VIP20:    0.20,  // 20% — percentage (value < 1)
 };
 

@@ -16,6 +16,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   KDSOrder,
   KDSStage,
+  KDSStation,
   KDS_STAGE_LABELS,
   KDS_STAGES,
   columnIdFromStage,
@@ -30,6 +31,7 @@ interface KDSKanbanBoardProps {
   onToggleItem: (orderId: string, itemId: number) => void;
   onMoveOrder: (id: string, targetStage: KDSStage) => void;
   highlightStage?: KDSStage | null;
+  activeStation?: KDSStation;
 }
 
 const columnAccent: Record<KDSStage, string> = {
@@ -46,17 +48,17 @@ const columnHeaderText: Record<KDSStage, string> = {
 
 function ColumnHeader({ stage, count, avgWait }: { stage: KDSStage; count: number; avgWait: number }) {
   return (
-    <div className="shrink-0 px-4 py-3 border-b border-kds-border/40">
+    <div className="shrink-0 px-4 py-3 border-b border-kds-border/40 bg-kds-column-header-bg/50">
       <div className="flex items-center justify-between">
         <h2
           className={`text-[13px] font-bold uppercase tracking-wider ${columnHeaderText[stage]}`}
         >
           {KDS_STAGE_LABELS[stage]}
         </h2>
-        <span className="text-[20px] font-bold text-kds-text tabular-nums">{count}</span>
+        <span className="text-[20px] font-bold text-kds-text tabular-nums leading-none">{count}</span>
       </div>
       {count > 0 && (
-        <p className="text-[11px] font-medium text-kds-muted mt-0.5">avg {avgWait}m wait</p>
+        <p className="text-[11px] font-semibold text-kds-muted mt-0.5">avg {avgWait}m wait</p>
       )}
     </div>
   );
@@ -69,6 +71,7 @@ function StaticKanbanColumn({
   onDismiss,
   onToggleItem,
   highlightStage,
+  activeStation = "all",
 }: {
   stage: KDSStage;
   orders: KDSOrder[];
@@ -76,6 +79,7 @@ function StaticKanbanColumn({
   onDismiss: (id: string) => void;
   onToggleItem: (orderId: string, itemId: number) => void;
   highlightStage?: KDSStage | null;
+  activeStation?: KDSStation;
 }) {
   const avgWait =
     orders.length > 0
@@ -85,7 +89,7 @@ function StaticKanbanColumn({
   return (
     <section
       id={`kds-column-${stage}`}
-      className={`flex flex-col h-full min-h-0 rounded-xl bg-kds-column-header-bg/40 border border-kds-border/50 border-t-4 ${columnAccent[stage]} ${
+      className={`flex flex-col h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm ${
         highlightStage === stage ? "ring-2 ring-kds-amber/40" : ""
       }`}
     >
@@ -93,8 +97,8 @@ function StaticKanbanColumn({
 
       <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-6 flex flex-col gap-[var(--kds-card-gap)] no-scrollbar">
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-kds-muted gap-1 shrink-0">
-            <p className="text-[13px] font-medium">No orders</p>
+          <div className="flex flex-col items-center justify-center py-12 text-kds-muted gap-1 shrink-0 select-none">
+            <p className="text-[13px] font-semibold">No orders</p>
           </div>
         ) : (
           orders.map((order) => (
@@ -105,6 +109,7 @@ function StaticKanbanColumn({
                 onDismiss={onDismiss}
                 onToggleItem={onToggleItem}
                 isKanban
+                activeStation={activeStation}
               />
             </div>
           ))
@@ -119,11 +124,13 @@ function DraggableKanbanCard({
   onAdvanceStage,
   onDismiss,
   onToggleItem,
+  activeStation = "all",
 }: {
   order: KDSOrder;
   onAdvanceStage: (id: string) => void;
   onDismiss: (id: string) => void;
   onToggleItem: (orderId: string, itemId: number) => void;
+  activeStation?: KDSStation;
 }) {
   const {
     attributes,
@@ -151,6 +158,7 @@ function DraggableKanbanCard({
         dragHandleListeners={listeners}
         dragHandleAttributes={attributes}
         setDragHandleRef={setActivatorNodeRef}
+        activeStation={activeStation}
       />
     </div>
   );
@@ -163,6 +171,7 @@ function KanbanColumn({
   onDismiss,
   onToggleItem,
   highlightStage,
+  activeStation = "all",
 }: {
   stage: KDSStage;
   orders: KDSOrder[];
@@ -170,6 +179,7 @@ function KanbanColumn({
   onDismiss: (id: string) => void;
   onToggleItem: (orderId: string, itemId: number) => void;
   highlightStage?: KDSStage | null;
+  activeStation?: KDSStation;
 }) {
   const columnId = columnIdFromStage(stage);
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
@@ -182,9 +192,9 @@ function KanbanColumn({
   return (
     <section
       id={`kds-column-${stage}`}
-      className={`flex flex-col h-full min-h-0 rounded-xl bg-kds-column-header-bg/40 border border-kds-border/50 border-t-4 ${columnAccent[stage]} ${
+      className={`flex flex-col h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm transition-all ${
         highlightStage === stage ? "ring-2 ring-kds-amber/40" : ""
-      } ${isOver ? "kds-column-drop-active" : ""}`}
+      } ${isOver ? "kds-column-drop-active scale-[1.01]" : ""}`}
     >
       <ColumnHeader stage={stage} count={orders.length} avgWait={avgWait} />
 
@@ -193,9 +203,9 @@ function KanbanColumn({
         className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-6 flex flex-col gap-[var(--kds-card-gap)] no-scrollbar"
       >
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-kds-muted gap-1 shrink-0">
-            <p className="text-[13px] font-medium">No orders</p>
-            <p className="text-[11px]">Drop here</p>
+          <div className="flex flex-col items-center justify-center py-12 text-kds-muted gap-1 shrink-0 select-none">
+            <p className="text-[13px] font-semibold">No orders</p>
+            <p className="text-[11px] text-kds-muted/70">Drag here</p>
           </div>
         ) : (
           orders.map((order) => (
@@ -205,6 +215,7 @@ function KanbanColumn({
               onAdvanceStage={onAdvanceStage}
               onDismiss={onDismiss}
               onToggleItem={onToggleItem}
+              activeStation={activeStation}
             />
           ))
         )}
@@ -220,6 +231,7 @@ function KanbanGrid({
   onToggleItem,
   highlightStage,
   dndEnabled,
+  activeStation = "all",
 }: {
   orders: KDSOrder[];
   onAdvanceStage: (id: string) => void;
@@ -227,6 +239,7 @@ function KanbanGrid({
   onToggleItem: (orderId: string, itemId: number) => void;
   highlightStage?: KDSStage | null;
   dndEnabled: boolean;
+  activeStation?: KDSStation;
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
@@ -243,6 +256,7 @@ function KanbanGrid({
             onDismiss={onDismiss}
             onToggleItem={onToggleItem}
             highlightStage={highlightStage}
+            activeStation={activeStation}
           />
         );
       })}
@@ -257,6 +271,7 @@ export function KDSKanbanBoard({
   onToggleItem,
   onMoveOrder,
   highlightStage,
+  activeStation = "all",
 }: KDSKanbanBoardProps) {
   const [mounted, setMounted] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
@@ -307,6 +322,7 @@ export function KDSKanbanBoard({
         onToggleItem={onToggleItem}
         highlightStage={highlightStage}
         dndEnabled={false}
+        activeStation={activeStation}
       />
     );
   }
@@ -325,11 +341,12 @@ export function KDSKanbanBoard({
         onToggleItem={onToggleItem}
         highlightStage={highlightStage}
         dndEnabled
+        activeStation={activeStation}
       />
 
       <DragOverlay dropAnimation={null}>
         {activeOrder ? (
-          <div className="opacity-90 rotate-1 scale-[1.02]">
+          <div className="opacity-90 rotate-1 scale-[1.02] pointer-events-none">
             <KDSOrderCard
               order={activeOrder}
               onAdvanceStage={() => {}}
@@ -337,6 +354,7 @@ export function KDSKanbanBoard({
               onToggleItem={() => {}}
               showDragHandle
               isKanban
+              activeStation={activeStation}
             />
           </div>
         ) : null}

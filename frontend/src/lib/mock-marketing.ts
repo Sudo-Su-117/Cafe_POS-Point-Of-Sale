@@ -12,7 +12,7 @@ export const INITIAL_COUPONS: Coupon[] = [
     id: "2",
     code: "WELCOME5",
     discountType: "fixed_amount",
-    value: 5,
+    value: 400,
     active: true,
   },
   {
@@ -39,8 +39,8 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     name: "Weekend Brunch Deal",
     scope: "order",
     triggerType: "min_amount",
-    triggerValue: 30,
+    triggerValue: 2400,
     discountType: "fixed_amount",
-    discountValue: 5,
+    discountValue: 400,
   },
 ];
