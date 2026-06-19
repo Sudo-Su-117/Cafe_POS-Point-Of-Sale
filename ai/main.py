@@ -603,5 +603,6 @@ Respond with ONLY the sentence. Do not add quotes, formatting, or greetings.
 
 if __name__ == "__main__":
     import uvicorn
-    # Self-runnable option to launch uvicorn server directly
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Self-runnable option to launch uvicorn server directly, reading PORT env variable if present (e.g. on Render)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

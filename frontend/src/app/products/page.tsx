@@ -6,6 +6,7 @@ import { ProductTable } from "@/features/products/components/ProductTable";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductModal } from "@/features/products/components/ProductModal";
 import { ProductsToolbar } from "@/features/products/components/ProductsToolbar";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,7 +21,7 @@ export default function ProductsPage() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -44,8 +45,8 @@ export default function ProductsPage() {
     try {
       const headers = { Authorization: `Bearer ${jwt}` };
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch("http://localhost:3000/products?limit=100", { headers }),
-        fetch("http://localhost:3000/categories?limit=100", { headers }),
+        fetch(`${API_BASE_URL}/products?limit=100`, { headers }),
+        fetch(`${API_BASE_URL}/categories?limit=100`, { headers }),
       ]);
 
       if (productsRes.ok && categoriesRes.ok) {
@@ -65,7 +66,7 @@ export default function ProductsPage() {
           tax: p.taxRate ? `${Number(p.taxRate)}%` : "8%",
           active: p.isActive,
           imageUrl: p.imageUrl 
-            ? (p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:3000${p.imageUrl}`)
+            ? (p.imageUrl.startsWith("http") ? p.imageUrl : `${API_BASE_URL}${p.imageUrl}`)
             : "",
           sizes: ["Small", "Large"],
           defaultSize: "Small",
@@ -93,7 +94,7 @@ export default function ProductsPage() {
     if (!prod) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/products/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +119,7 @@ export default function ProductsPage() {
     if (!token) return;
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        const response = await fetch(`http://localhost:3000/products/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/products/${id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -154,15 +155,15 @@ export default function ProductsPage() {
     if (!token) return;
     try {
       let imageUrl = productForm.imageFile ? "" : (selectedProduct?.imageUrl || "");
-      if (imageUrl.startsWith("http://localhost:3000")) {
-        imageUrl = imageUrl.replace("http://localhost:3000", "");
+      if (imageUrl.startsWith(API_BASE_URL)) {
+        imageUrl = imageUrl.replace(API_BASE_URL, "");
       }
 
       if (productForm.imageFile) {
         const formData = new FormData();
         formData.append("image", productForm.imageFile);
 
-        const uploadRes = await fetch("http://localhost:3000/products/upload-image", {
+        const uploadRes = await fetch(`${API_BASE_URL}/products/upload-image`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -181,7 +182,7 @@ export default function ProductsPage() {
       const taxRateValue = parseFloat(productForm.tax.replace("%", "")) || 0;
 
       if (productForm.id) {
-        const response = await fetch(`http://localhost:3000/products/${productForm.id}`, {
+        const response = await fetch(`${API_BASE_URL}/products/${productForm.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -205,7 +206,7 @@ export default function ProductsPage() {
           alert(`Error: ${err.message || "Failed to update product"}`);
         }
       } else {
-        const response = await fetch("http://localhost:3000/products", {
+        const response = await fetch(`${API_BASE_URL}/products`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

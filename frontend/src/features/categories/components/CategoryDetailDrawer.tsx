@@ -5,6 +5,7 @@ import { X, Search, Package, DollarSign, TrendingUp, Pencil, ChevronRight, Plus 
 import { Category } from "./types";
 import { Product } from "./categoryProducts";
 import { ProductModal, ProductAvatar } from "./ProductModal";
+import { API_BASE_URL } from "@/lib/config";
 
 interface CategoryDetailDrawerProps {
   category: Category;
@@ -61,7 +62,7 @@ export function CategoryDetailDrawer({
 
     try {
       if (productModal?.mode === "add") {
-        const response = await fetch("http://localhost:3000/products", {
+        const response = await fetch(`${API_BASE_URL}/products`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -89,7 +90,7 @@ export function CategoryDetailDrawer({
         }
       } else if (productModal?.mode === "edit" && productModal.product) {
         const id = productModal.product.id;
-        const response = await fetch(`http://localhost:3000/products/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/products/${id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -128,7 +129,7 @@ export function CategoryDetailDrawer({
     const name = productModal.product.name;
 
     try {
-      const response = await fetch(`http://localhost:3000/products/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

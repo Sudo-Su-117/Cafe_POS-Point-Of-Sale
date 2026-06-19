@@ -7,6 +7,7 @@ import { CategoryCard } from "@/features/categories/components/CategoryCard";
 import { CategoryModal } from "@/features/categories/components/CategoryModal";
 import { DeleteConfirmModal } from "@/features/categories/components/DeleteConfirmModal";
 import { CategoryDetailDrawer } from "@/features/categories/components/CategoryDetailDrawer";
+import { API_BASE_URL } from "@/lib/config";
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 const SEED_CATEGORIES: Category[] = [
@@ -43,7 +44,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -67,9 +68,9 @@ export default function CategoriesPage() {
     try {
       const headers = { Authorization: `Bearer ${jwt}` };
       const [catsRes, productsRes, reportRes] = await Promise.all([
-        fetch("http://localhost:3000/categories?limit=100", { headers }),
-        fetch("http://localhost:3000/products?limit=100", { headers }),
-        fetch("http://localhost:3000/reports/categories?startDate=2026-01-01&endDate=2026-12-31", { headers }),
+        fetch(`${API_BASE_URL}/categories?limit=100`, { headers }),
+        fetch(`${API_BASE_URL}/products?limit=100`, { headers }),
+        fetch(`${API_BASE_URL}/reports/categories?startDate=2026-01-01&endDate=2026-12-31`, { headers }),
       ]);
 
       if (catsRes.ok && productsRes.ok && reportRes.ok) {
@@ -89,7 +90,7 @@ export default function CategoriesPage() {
           tax: Number(p.taxRate || 0),
           description: p.description || "",
           image: p.imageUrl 
-            ? (p.imageUrl.startsWith("http") ? p.imageUrl : `http://localhost:3000${p.imageUrl}`)
+            ? (p.imageUrl.startsWith("http") ? p.imageUrl : `${API_BASE_URL}${p.imageUrl}`)
             : null,
           status: p.isActive ? "Active" : "Inactive",
           categoryId: p.categoryId,
@@ -109,7 +110,7 @@ export default function CategoriesPage() {
             name: cat.name,
             color: cat.color || "#4A7C8A",
             image: cat.imageUrl 
-              ? (cat.imageUrl.startsWith("http") ? cat.imageUrl : `http://localhost:3000${cat.imageUrl}`)
+              ? (cat.imageUrl.startsWith("http") ? cat.imageUrl : `${API_BASE_URL}${cat.imageUrl}`)
               : null,
             productCount,
             revenue: `₹${revenueValue.toLocaleString()}`,
@@ -145,13 +146,13 @@ export default function CategoriesPage() {
   const handleSave = async (data: { name: string; color: string; image: string | null; imageFile: File | null }) => {
     if (!token) return;
     try {
-      let imageUrl = data.image ? (data.image.startsWith("http") ? data.image.replace("http://localhost:3000", "") : data.image) : null;
+      let imageUrl = data.image ? (data.image.startsWith("http") ? data.image.replace(API_BASE_URL, "") : data.image) : null;
 
       if (data.imageFile) {
         const formData = new FormData();
         formData.append("image", data.imageFile);
 
-        const uploadRes = await fetch("http://localhost:3000/categories/upload-image", {
+        const uploadRes = await fetch(`${API_BASE_URL}/categories/upload-image`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -168,7 +169,7 @@ export default function CategoriesPage() {
       }
 
       if (modal === "add") {
-        const response = await fetch("http://localhost:3000/categories", {
+        const response = await fetch(`${API_BASE_URL}/categories`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -189,7 +190,7 @@ export default function CategoriesPage() {
           showToast(`Error: ${errData.message || "Failed to create category"}`);
         }
       } else if (modal === "edit" && editTarget) {
-        const response = await fetch(`http://localhost:3000/categories/${editTarget.id}`, {
+        const response = await fetch(`${API_BASE_URL}/categories/${editTarget.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -220,7 +221,7 @@ export default function CategoriesPage() {
   const handleDelete = async () => {
     if (!deleteTarget || !token) return;
     try {
-      const response = await fetch(`http://localhost:3000/categories/${deleteTarget.id}`, {
+      const response = await fetch(`${API_BASE_URL}/categories/${deleteTarget.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

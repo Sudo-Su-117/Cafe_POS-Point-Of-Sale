@@ -14,6 +14,7 @@ import { CouponsTable } from "@/features/marketing/components/CouponsTable";
 import { PromotionsTable } from "@/features/marketing/components/PromotionsTable";
 import { CouponModal } from "@/features/marketing/components/CouponModal";
 import { PromotionModal } from "@/features/marketing/components/PromotionModal";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function CouponsPage() {
   const [activeTab, setActiveTab] = useState<MarketingTab>("coupons");
@@ -41,7 +42,7 @@ export default function CouponsPage() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -64,8 +65,8 @@ export default function CouponsPage() {
     const headers = { Authorization: `Bearer ${jwt}` };
     try {
       const [couponsRes, promotionsRes] = await Promise.all([
-        fetch("http://localhost:3000/coupons", { headers }),
-        fetch("http://localhost:3000/promotions", { headers }),
+        fetch(`${API_BASE_URL}/coupons`, { headers }),
+        fetch(`${API_BASE_URL}/promotions`, { headers }),
       ]);
       if (couponsRes.ok) {
         const data = await couponsRes.json();
@@ -110,7 +111,7 @@ export default function CouponsPage() {
     setIsAiLoading(true);
     try {
       const excludeQuery = pastPromoNames.length > 0 ? `?exclude=${encodeURIComponent(pastPromoNames.join(","))}` : "";
-      const response = await fetch(`http://localhost:3000/promotions/generate-ai${excludeQuery}`, {
+      const response = await fetch(`${API_BASE_URL}/promotions/generate-ai${excludeQuery}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -146,7 +147,7 @@ export default function CouponsPage() {
       : new Date("1970-01-01").toISOString();
 
     try {
-      const response = await fetch(`http://localhost:3000/coupons/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/coupons/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +171,7 @@ export default function CouponsPage() {
     if (!token) return;
     if (confirm("Are you sure you want to delete this coupon?")) {
       try {
-        const response = await fetch(`http://localhost:3000/coupons/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/coupons/${id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -189,7 +190,7 @@ export default function CouponsPage() {
     if (!token) return;
     if (confirm("Are you sure you want to delete this promotion?")) {
       try {
-        const response = await fetch(`http://localhost:3000/promotions/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/promotions/${id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -227,7 +228,7 @@ export default function CouponsPage() {
     if (!token) return;
     try {
       const isEdit = !!data.id;
-      const url = isEdit ? `http://localhost:3000/coupons/${data.id}` : "http://localhost:3000/coupons";
+      const url = isEdit ? `${API_BASE_URL}/coupons/${data.id}` : `${API_BASE_URL}/coupons`;
       const method = isEdit ? "PUT" : "POST";
       const response = await fetch(url, {
         method,
@@ -261,7 +262,7 @@ export default function CouponsPage() {
     if (!token) return;
     try {
       const isEdit = !!data.id;
-      const url = isEdit ? `http://localhost:3000/promotions/${data.id}` : "http://localhost:3000/promotions";
+      const url = isEdit ? `${API_BASE_URL}/promotions/${data.id}` : `${API_BASE_URL}/promotions`;
       const method = isEdit ? "PUT" : "POST";
       const response = await fetch(url, {
         method,
@@ -400,7 +401,7 @@ export default function CouponsPage() {
                   onClick={async () => {
                     if (!token) return;
                     try {
-                      const response = await fetch("http://localhost:3000/promotions", {
+                      const response = await fetch(`${API_BASE_URL}/promotions`, {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Bot, Send, Sparkles, RefreshCw, AlertCircle, Trash2, ArrowRight } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -21,7 +22,7 @@ export default function AskAiPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const API_BASE_URL = "http://localhost:3000";
+
 
   const SUGGESTED_PROMPTS = [
     "Why are sales down?",

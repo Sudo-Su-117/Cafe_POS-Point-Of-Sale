@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { POSProduct } from "@/lib/pos-product-types";
 import { CartItem } from "@/lib/pos-order-utils";
+import { API_BASE_URL } from "@/lib/config";
 import { POSHeader } from "./POSHeader";
 import { ProductCatalog } from "./ProductCatalog";
 import { OrderPanel } from "./OrderPanel";
@@ -31,7 +32,7 @@ export function POSTerminalScreen() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -55,7 +56,7 @@ export function POSTerminalScreen() {
     async function fetchTables() {
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:3000/tables", {
+        const res = await fetch(`${API_BASE_URL}/tables`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {

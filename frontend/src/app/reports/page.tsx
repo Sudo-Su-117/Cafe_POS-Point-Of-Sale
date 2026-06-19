@@ -7,6 +7,7 @@ import { RevenueChart } from "@/features/reports/components/RevenueChart";
 import { TopProductsTable } from "@/features/reports/components/TopProductsTable";
 import { TopOrdersTable } from "@/features/reports/components/TopOrdersTable";
 import { CategoryBreakdown } from "@/features/reports/components/CategoryBreakdown";
+import { API_BASE_URL } from "@/lib/config";
 
 const periods = ["Today", "This Week", "This Month", "Custom"];
 
@@ -92,7 +93,7 @@ export default function ReportsPage() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -125,11 +126,11 @@ export default function ReportsPage() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [salesRes, productsRes, ordersRes, categoriesRes, trendRes] = await Promise.all([
-        fetch(`http://localhost:3000/reports/sales?startDate=${start}&endDate=${end}`, { headers }),
-        fetch(`http://localhost:3000/reports/top-products?startDate=${start}&endDate=${end}`, { headers }),
-        fetch(`http://localhost:3000/reports/top-orders?startDate=${start}&endDate=${end}`, { headers }),
-        fetch(`http://localhost:3000/reports/categories?startDate=${start}&endDate=${end}`, { headers }),
-        fetch(`http://localhost:3000/reports/revenue-trend?startDate=${start}&endDate=${end}`, { headers }),
+        fetch(`${API_BASE_URL}/reports/sales?startDate=${start}&endDate=${end}`, { headers }),
+        fetch(`${API_BASE_URL}/reports/top-products?startDate=${start}&endDate=${end}`, { headers }),
+        fetch(`${API_BASE_URL}/reports/top-orders?startDate=${start}&endDate=${end}`, { headers }),
+        fetch(`${API_BASE_URL}/reports/categories?startDate=${start}&endDate=${end}`, { headers }),
+        fetch(`${API_BASE_URL}/reports/revenue-trend?startDate=${start}&endDate=${end}`, { headers }),
       ]);
 
       if (salesRes.ok) setSalesData(await salesRes.json());
@@ -165,7 +166,7 @@ export default function ReportsPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/reports/ai-insights?startDate=${startDate}&endDate=${endDate}`,
+        `${API_BASE_URL}/reports/ai-insights?startDate=${startDate}&endDate=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

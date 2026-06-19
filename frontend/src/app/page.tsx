@@ -7,6 +7,7 @@ import { SalesChart } from "@/features/dashboard/components/SalesChart";
 import { CategoryChart } from "@/features/dashboard/components/CategoryChart";
 import { ProductsTable } from "@/features/dashboard/components/ProductsTable";
 import { OrdersTable } from "@/features/dashboard/components/OrdersTable";
+import { API_BASE_URL } from "@/lib/config";
 
 const formatDateToYYYYMMDD = (d: Date) => {
   const year = d.getFullYear();
@@ -31,7 +32,7 @@ export default function Home() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -66,12 +67,12 @@ export default function Home() {
       try {
         const headers = { Authorization: `Bearer ${token}` };
         const [salesRes, trendRes, catsRes, productsRes, ordersRes, tablesRes] = await Promise.all([
-          fetch(`http://localhost:3000/reports/sales?startDate=${start}&endDate=${end}`, { headers }),
-          fetch(`http://localhost:3000/reports/revenue-trend?startDate=${start}&endDate=${end}`, { headers }),
-          fetch(`http://localhost:3000/reports/categories?startDate=${start}&endDate=${end}`, { headers }),
-          fetch(`http://localhost:3000/reports/top-products?startDate=${start}&endDate=${end}`, { headers }),
-          fetch(`http://localhost:3000/orders?limit=10`, { headers }),
-          fetch(`http://localhost:3000/tables`, { headers }),
+          fetch(`${API_BASE_URL}/reports/sales?startDate=${start}&endDate=${end}`, { headers }),
+          fetch(`${API_BASE_URL}/reports/revenue-trend?startDate=${start}&endDate=${end}`, { headers }),
+          fetch(`${API_BASE_URL}/reports/categories?startDate=${start}&endDate=${end}`, { headers }),
+          fetch(`${API_BASE_URL}/reports/top-products?startDate=${start}&endDate=${end}`, { headers }),
+          fetch(`${API_BASE_URL}/orders?limit=10`, { headers }),
+          fetch(`${API_BASE_URL}/tables`, { headers }),
         ]);
 
         if (salesRes.ok) setSalesData(await salesRes.json());

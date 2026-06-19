@@ -7,6 +7,7 @@ import { UserTable } from "@/features/users/components/UserTable";
 import { UserCard } from "@/features/users/components/UserCard";
 import { UserModal } from "@/features/users/components/UserModal";
 import { StatCard } from "@/features/dashboard/components/StatCard";
+import { API_BASE_URL } from "@/lib/config";
 
 const AVATAR_COLORS = ["#C9783A", "#5B8FA8", "#789658", "#866443", "#9B6A9B", "#6B8E7B", "#A67B5B", "#7B9EA8"];
 
@@ -35,7 +36,7 @@ export default function UsersPage() {
   useEffect(() => {
     async function autoLogin() {
       try {
-        const response = await fetch("http://localhost:3000/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: "admin@cafe.com", password: "Admin@123" }),
@@ -54,7 +55,7 @@ export default function UsersPage() {
   // Fetch users from backend
   const fetchUsers = async (jwt: string) => {
     try {
-      const res = await fetch("http://localhost:3000/users", {
+      const res = await fetch(`${API_BASE_URL}/users`, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       if (res.ok) {
@@ -85,7 +86,7 @@ export default function UsersPage() {
 
     if (modal?.kind === "add") {
       try {
-        const res = await fetch("http://localhost:3000/users", {
+        const res = await fetch(`${API_BASE_URL}/users`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -110,7 +111,7 @@ export default function UsersPage() {
       }
     } else if (modal?.kind === "edit") {
       try {
-        const res = await fetch(`http://localhost:3000/users/${modal.user.id}`, {
+        const res = await fetch(`${API_BASE_URL}/users/${modal.user.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -131,7 +132,7 @@ export default function UsersPage() {
       }
     } else if (modal?.kind === "password") {
       try {
-        const res = await fetch(`http://localhost:3000/users/${modal.user.id}`, {
+        const res = await fetch(`${API_BASE_URL}/users/${modal.user.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -157,7 +158,7 @@ export default function UsersPage() {
     if (!u) return;
     const newStatus = u.status === "Active" ? "ARCHIVED" : "ACTIVE";
     try {
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +178,7 @@ export default function UsersPage() {
   const handleDelete = async () => {
     if (!deleteTarget || !token) return;
     try {
-      const res = await fetch(`http://localhost:3000/users/${deleteTarget.id}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
