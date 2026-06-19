@@ -119,7 +119,7 @@ Formatting Constraints:
     # 2. Try Gemini Cloud API
     if gemini_key:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json={
                     "contents": [{"parts": [{"text": prompt}]}]
@@ -310,7 +310,7 @@ Do not include any markup like ```json or trailing text. Return ONLY the JSON ob
     # 2. Try Gemini Cloud API
     if gemini_key:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json={
                     "contents": [{"parts": [{"text": prompt}]}]
@@ -442,25 +442,23 @@ Your goal is to answer the cafe owner's questions accurately, professionally, an
     # 2. Try Gemini Cloud API
     if gemini_key:
         try:
-            # Combine system prompt with first user message to guarantee compatibility
-            combined_prompt = f"{system_prompt}\n\nUser Question:\n{req.message}"
-            gemini_contents = []
+            # Flatten history into a single combined prompt to prevent strict alternating roles errors on Gemini
+            history_str = ""
             for h in req.history:
-                role = "user" if h.get("role") == "user" else "model"
-                gemini_contents.append({
-                    "role": role,
-                    "parts": [{"text": h.get("content", "")}]
-                })
-            # Add final message
-            gemini_contents.append({
-                "role": "user",
-                "parts": [{"text": combined_prompt}]
-            })
+                role_label = "Owner" if h.get("role") == "user" else "Cafe AI"
+                history_str += f"{role_label}: {h.get('content', '')}\n"
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            combined_prompt = f"""{system_prompt}
+
+Conversation History:
+{history_str}
+Owner: {req.message}
+Cafe AI:"""
+
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json={
-                    "contents": gemini_contents
+                    "contents": [{"parts": [{"text": combined_prompt}]}]
                 }, timeout=30.0)
                 
                 if response.status_code == 200:
@@ -574,7 +572,7 @@ Respond with ONLY the sentence. Do not add quotes, formatting, or greetings.
 
     if gemini_key and upsell_sentence == f"People who buy {cart_str} often buy {top_item.name}.":
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json={
                     "contents": [{"parts": [{"text": prompt}]}]

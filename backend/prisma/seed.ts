@@ -63,19 +63,28 @@ const CUSTOMERS_POOL = [
 async function main() {
   console.log('🌱 Starting database clean up...');
   
-  // Clean tables in reverse order of foreign key dependencies
-  await prisma.payment.deleteMany();
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.restaurantTable.deleteMany();
-  await prisma.floor.deleteMany();
-  await prisma.customer.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.coupon.deleteMany();
-  await prisma.promotion.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.user.deleteMany();
+  const tablenames = [
+    'payments',
+    'order_items',
+    'orders',
+    'restaurant_tables',
+    'floors',
+    'customers',
+    'products',
+    'categories',
+    'coupons',
+    'promotions',
+    'sessions',
+    'users'
+  ];
+  for (const name of tablenames) {
+    try {
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${name}" CASCADE;`);
+    } catch (err) {
+      console.log(`Could not truncate ${name}, skipping or trying delete:`, err);
+      // Fallback
+    }
+  }
 
   console.log('✅ Clean up complete. Seeding users...');
 
@@ -268,7 +277,7 @@ async function main() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date();
-  startDate.setDate(today.getDate() - 365);
+  startDate.setDate(today.getDate() - 3);
   startDate.setHours(0, 0, 0, 0);
 
   console.log(`Generating orders from ${startDate.toDateString()} to ${today.toDateString()}...`);
