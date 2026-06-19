@@ -79,6 +79,8 @@ Formatting Constraints:
     print("="*60)
 
     local_llm_url = os.getenv("LOCAL_LLM_URL")
+    if local_llm_url and ("localhost" in local_llm_url or "127.0.0.1" in local_llm_url) and os.getenv("PORT"):
+        local_llm_url = None
     local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
     gemini_key = os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -252,6 +254,8 @@ Do not include any markup like ```json or trailing text. Return ONLY the JSON ob
     print("="*60)
 
     local_llm_url = os.getenv("LOCAL_LLM_URL")
+    if local_llm_url and ("localhost" in local_llm_url or "127.0.0.1" in local_llm_url) and os.getenv("PORT"):
+        local_llm_url = None
     local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
     gemini_key = os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -404,6 +408,8 @@ Your goal is to answer the cafe owner's questions accurately, professionally, an
     print("="*60)
 
     local_llm_url = os.getenv("LOCAL_LLM_URL")
+    if local_llm_url and ("localhost" in local_llm_url or "127.0.0.1" in local_llm_url) and os.getenv("PORT"):
+        local_llm_url = None
     local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
     gemini_key = os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -536,6 +542,8 @@ Respond with ONLY the sentence. Do not add quotes, formatting, or greetings.
 """
 
     local_llm_url = os.getenv("LOCAL_LLM_URL")
+    if local_llm_url and ("localhost" in local_llm_url or "127.0.0.1" in local_llm_url) and os.getenv("PORT"):
+        local_llm_url = None
     local_llm_model = os.getenv("LOCAL_LLM_MODEL", "lm-studio-model")
     gemini_key = os.getenv("GEMINI_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
