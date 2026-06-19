@@ -19,6 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "healthy", "service": "Cafe POS AI Service"}
+
 class AnalyzeRequest(BaseModel):
     currentRevenue: float
     prevRevenue: float
