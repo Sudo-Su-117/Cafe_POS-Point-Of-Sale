@@ -307,7 +307,7 @@ export default function KDSPage() {
       <main
         className={`flex-1 px-7 py-6 min-h-0 ${
           viewMode === "kanban" && filtered.length > 0
-            ? "overflow-hidden flex flex-col"
+            ? "overflow-y-auto lg:overflow-hidden flex flex-col h-auto lg:h-full"
             : "overflow-y-auto no-scrollbar"
         }`}
       >

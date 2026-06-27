@@ -89,7 +89,7 @@ function StaticKanbanColumn({
   return (
     <section
       id={`kds-column-${stage}`}
-      className={`flex flex-col h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm ${
+      className={`flex flex-col h-[450px] lg:h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm ${
         highlightStage === stage ? "ring-2 ring-kds-amber/40" : ""
       }`}
     >
@@ -192,7 +192,7 @@ function KanbanColumn({
   return (
     <section
       id={`kds-column-${stage}`}
-      className={`flex flex-col h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm transition-all ${
+      className={`flex flex-col h-[450px] lg:h-full min-h-0 rounded-[18px] bg-kds-surface/60 border border-kds-border/70 border-t-4 ${columnAccent[stage]} shadow-sm transition-all ${
         highlightStage === stage ? "ring-2 ring-kds-amber/40" : ""
       } ${isOver ? "kds-column-drop-active scale-[1.01]" : ""}`}
     >
@@ -242,7 +242,7 @@ function KanbanGrid({
   activeStation?: KDSStation;
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-full min-h-0">
       {KDS_STAGES.map((stage) => {
         const stageOrders = orders.filter((o) => o.stage === stage);
         const Column = dndEnabled ? KanbanColumn : StaticKanbanColumn;

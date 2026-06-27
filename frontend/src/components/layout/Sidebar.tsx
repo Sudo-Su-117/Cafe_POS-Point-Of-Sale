@@ -106,6 +106,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={onClose}
                   className={navLinkClass(isActive)}
                 >
                   <Icon
@@ -132,6 +133,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={onClose}
                   className={navLinkClass(isActive)}
                 >
                   <Icon

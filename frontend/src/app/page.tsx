@@ -19,6 +19,7 @@ const formatDateToYYYYMMDD = (d: Date) => {
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<string>("lifetime");
 
   // States for DB data
   const [salesData, setSalesData] = useState<any>(null);
@@ -51,16 +52,27 @@ export default function Home() {
     autoLogin();
   }, []);
 
-  // Fetch dashboard stats (last 7 days range)
+  // Fetch dashboard stats
   useEffect(() => {
     if (!token) return;
 
     const today = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 7);
+    let start = "";
+    let end = formatDateToYYYYMMDD(today);
 
-    const start = formatDateToYYYYMMDD(sevenDaysAgo);
-    const end = formatDateToYYYYMMDD(today);
+    if (selectedRange === "today") {
+      start = formatDateToYYYYMMDD(today);
+    } else if (selectedRange === "week") {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      start = formatDateToYYYYMMDD(sevenDaysAgo);
+    } else if (selectedRange === "month") {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      start = formatDateToYYYYMMDD(thirtyDaysAgo);
+    } else { // "lifetime"
+      start = "2020-01-01";
+    }
 
     async function fetchDashboard() {
       setIsLoading(true);
@@ -95,7 +107,7 @@ export default function Home() {
     }
 
     fetchDashboard();
-  }, [token]);
+  }, [token, selectedRange]);
 
   // Calculate table metrics
   const activeTablesCount = tablesData.filter((t) => t.status !== "AVAILABLE").length;
@@ -143,19 +155,48 @@ export default function Home() {
 
   const formatGrowthText = (val: number | undefined) => {
     if (val === undefined) return "Calculating...";
+    if (selectedRange === "lifetime") {
+      return "Lifetime stats";
+    }
     const prefix = val >= 0 ? "+" : "";
-    return `${prefix}${val.toFixed(1)}% this week`;
+    const periodLabel = selectedRange === "today" ? "today" : selectedRange === "month" ? "this month" : "this week";
+    return `${prefix}${val.toFixed(1)}% vs last ${periodLabel}`;
   };
 
   return (
     <div className={`flex flex-col gap-6 md:gap-8 max-w-[1600px] mx-auto transition-opacity duration-300 ${isLoading ? "opacity-75" : "opacity-100"}`}>
+      {/* Header and Filter Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-surface/50 border border-border-custom/50 rounded-[20px] p-5 theme-transition">
+        <div>
+          <h2 className="text-[18px] sm:text-[20px] font-bold text-text-heading font-sans">
+            Overview Performance
+          </h2>
+          <p className="text-[12px] sm:text-[13px] font-medium text-text-muted mt-1 select-none">
+            Monitor your cafe's sales, orders, and product distributions.
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[13px] font-bold text-text-heading font-sans whitespace-nowrap">Filter Period:</span>
+          <select
+            value={selectedRange}
+            onChange={(e) => setSelectedRange(e.target.value)}
+            className="h-[42px] px-4 rounded-[12px] border border-border-custom bg-surface text-[13px] font-bold text-text-heading hover:border-primary transition-all duration-150 cursor-pointer outline-none theme-transition"
+          >
+            <option value="lifetime">Lifetime</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
+        </div>
+      </div>
+
       {/* 4 KPI Cards Grid */}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <StatCard
           title="Total Revenue"
           value={salesData ? `₹${salesData.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "₹0.00"}
           deltaText={formatGrowthText(salesData?.revenueGrowth)}
-          isPositive={(salesData?.revenueGrowth || 0) >= 0}
+          isPositive={selectedRange === "lifetime" ? true : (salesData?.revenueGrowth || 0) >= 0}
           icon={DollarSign}
           iconTheme="orange"
         />
@@ -163,7 +204,7 @@ export default function Home() {
           title="Total Orders"
           value={salesData ? `${salesData.totalOrders} orders` : "0 orders"}
           deltaText={formatGrowthText(salesData?.ordersGrowth)}
-          isPositive={(salesData?.ordersGrowth || 0) >= 0}
+          isPositive={selectedRange === "lifetime" ? true : (salesData?.ordersGrowth || 0) >= 0}
           icon={ShoppingBag}
           iconTheme="brown"
         />
@@ -171,7 +212,7 @@ export default function Home() {
           title="Avg. Ticket Value"
           value={salesData ? `₹${salesData.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "₹0.00"}
           deltaText={formatGrowthText(salesData?.aovGrowth)}
-          isPositive={(salesData?.aovGrowth || 0) >= 0}
+          isPositive={selectedRange === "lifetime" ? true : (salesData?.aovGrowth || 0) >= 0}
           icon={CreditCard}
           iconTheme="gold"
         />

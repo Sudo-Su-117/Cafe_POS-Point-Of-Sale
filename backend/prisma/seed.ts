@@ -179,30 +179,29 @@ async function main() {
 
   // Create Products
   const productsData = [
-    // Coffee
     { name: 'Espresso', price: 2.50, categoryName: 'Coffee', description: 'Rich and concentrated shot of coffee', imageUrl: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=400&h=400&fit=crop' },
-    { name: 'Caffe Latte', price: 4.20, categoryName: 'Coffee', description: 'Espresso with steamed milk and a light layer of foam', imageUrl: 'https://images.unsplash.com/photo-1570968915860-54d5c301fc9f?w=400&h=400&fit=crop' },
+    { name: 'Caffe Latte', price: 4.20, categoryName: 'Coffee', description: 'Espresso with steamed milk and a light layer of foam', imageUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=400&h=400&fit=crop' },
     { name: 'Cappuccino', price: 4.20, categoryName: 'Coffee', description: 'Espresso, steamed milk, and wet milk foam', imageUrl: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&h=400&fit=crop' },
     { name: 'Americano', price: 3.20, categoryName: 'Coffee', description: 'Espresso shots topped with hot water', imageUrl: 'https://images.unsplash.com/photo-1551030173-1d9694761516?w=400&h=400&fit=crop' },
-    { name: 'Caramel Macchiato', price: 4.80, categoryName: 'Coffee', description: 'Espresso with vanilla syrup, milk, and caramel drizzle', imageUrl: 'https://images.unsplash.com/photo-1485808191679-5f86510bd9d4?w=400&h=400&fit=crop' },
+    { name: 'Caramel Macchiato', price: 4.80, categoryName: 'Coffee', description: 'Espresso with vanilla syrup, milk, and caramel drizzle', imageUrl: 'https://images.unsplash.com/photo-1595786815358-9f204f2d482c?w=400&h=400&fit=crop' },
     { name: 'Mocha', price: 4.70, categoryName: 'Coffee', description: 'Espresso, chocolate syrup, and steamed milk', imageUrl: 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=400&h=400&fit=crop' },
-
+ 
     // Tea
     { name: 'Masala Chai', price: 3.50, categoryName: 'Tea & Chai', description: 'Brewed black tea with spiced milk and sugar', imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&h=400&fit=crop' },
     { name: 'Matcha Latte', price: 4.90, categoryName: 'Tea & Chai', description: 'Pure Japanese matcha green tea whisked with milk', imageUrl: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400&h=400&fit=crop' },
     { name: 'Green Tea', price: 3.00, categoryName: 'Tea & Chai', description: 'Delicate and refreshing steamed green tea leaves', imageUrl: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=400&h=400&fit=crop' },
     { name: 'Earl Grey Tea', price: 3.20, categoryName: 'Tea & Chai', description: 'Black tea scented with oil of bergamot', imageUrl: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=400&h=400&fit=crop' },
-
+ 
     // Bakery
     { name: 'Butter Croissant', price: 3.00, categoryName: 'Bakery', description: 'Flaky and buttery classic French pastry', imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=400&fit=crop' },
-    { name: 'Chocolate Croissant', price: 3.50, categoryName: 'Bakery', description: 'Butter croissant stuffed with rich chocolate', imageUrl: 'https://images.unsplash.com/photo-1612978674174-666fe2c36a13?w=400&h=400&fit=crop' },
+    { name: 'Chocolate Croissant', price: 3.50, categoryName: 'Bakery', description: 'Butter croissant stuffed with rich chocolate', imageUrl: 'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=400&h=400&fit=crop' },
     { name: 'Blueberry Muffin', price: 3.20, categoryName: 'Bakery', description: 'Moist muffin loaded with fresh blueberries', imageUrl: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=400&fit=crop' },
     { name: 'Chocolate Chip Cookie', price: 2.50, categoryName: 'Bakery', description: 'Chewy, freshly baked cookie with chocolate chips', imageUrl: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&h=400&fit=crop' },
-
+ 
     // Sandwiches
     { name: 'Caprese Sandwich', price: 7.90, categoryName: 'Sandwiches & Wraps', description: 'Mozzarella, tomato, pesto, and balsamic glaze on ciabatta', imageUrl: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=400&fit=crop' },
-    { name: 'Chicken Club Sandwich', price: 8.50, categoryName: 'Sandwiches & Wraps', description: 'Grilled chicken, bacon, lettuce, tomato, and mayo', imageUrl: 'https://images.unsplash.com/photo-1567234669013-216f9fa26c36?w=400&h=400&fit=crop' },
-    { name: 'Avocado Toast', price: 7.20, categoryName: 'Sandwiches & Wraps', description: 'Smashed avocado, cherry tomatoes, and feta on sourdough', imageUrl: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=400&h=400&fit=crop' },
+    { name: 'Chicken Club Sandwich', price: 8.50, categoryName: 'Sandwiches & Wraps', description: 'Grilled chicken, bacon, lettuce, tomato, and mayo', imageUrl: 'https://images.unsplash.com/photo-1567234669003-75e525322515?w=400&h=400&fit=crop' },
+    { name: 'Avocado Toast', price: 7.20, categoryName: 'Sandwiches & Wraps', description: 'Smashed avocado, cherry tomatoes, and feta on sourdough', imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=400&fit=crop' },=crop' },
     { name: 'Paneer Tikka Wrap', price: 7.80, categoryName: 'Sandwiches & Wraps', description: 'Spiced paneer, veggies, and mint chutney wrapped in tortilla', imageUrl: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=400&fit=crop' },
 
     // Desserts

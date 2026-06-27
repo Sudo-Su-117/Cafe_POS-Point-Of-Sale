@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { POSProduct } from "@/lib/pos-product-types";
 import { CartItem } from "@/lib/pos-order-utils";
 import { API_BASE_URL } from "@/lib/config";
+import { Coffee, ShoppingBag } from "lucide-react";
 import { POSHeader } from "./POSHeader";
 import { ProductCatalog } from "./ProductCatalog";
 import { OrderPanel } from "./OrderPanel";
@@ -27,6 +28,7 @@ export function POSTerminalScreen() {
   const [paymentTotal, setPaymentTotal] = useState(0);
   const [tables, setTables] = useState<any[]>([]);
   const [token, setToken] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
 
   // Auto-login to obtain JWT token
   useEffect(() => {
@@ -145,10 +147,10 @@ export function POSTerminalScreen() {
       )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
-        <div className="flex-[3] min-w-0 min-h-0 md:min-h-full overflow-hidden">
+        <div className={`${mobileTab === "catalog" ? "flex" : "hidden md:flex"} flex-[3] min-w-0 min-h-0 md:min-h-full overflow-hidden`}>
           <ProductCatalog onAddToCart={addToCart} cartQuantities={cartQuantities} />
         </div>
-        <div className="shrink-0 md:flex-[1] min-w-0 md:min-w-[300px] md:max-w-[370px] border-t md:border-t-0 border-[#D8CCC0] h-[45vh] md:h-auto">
+        <div className={`${mobileTab === "cart" ? "flex" : "hidden md:flex"} shrink-0 md:flex-[1] min-w-0 md:min-w-[300px] md:max-w-[370px] border-t md:border-t-0 border-[#D8CCC0] flex-col h-full md:h-auto`}>
           <OrderPanel
             items={cartItems}
             onUpdateQty={updateQty}
@@ -157,6 +159,35 @@ export function POSTerminalScreen() {
             onCheckout={handleCheckout}
           />
         </div>
+      </div>
+
+      {/* Mobile navigation tab bar */}
+      <div className="md:hidden flex h-[62px] border-t border-[#D8CCC0] bg-[#FAF6F0] shrink-0 z-30 select-none">
+        <button
+          type="button"
+          onClick={() => setMobileTab("catalog")}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-bold ${
+            mobileTab === "catalog" ? "text-[#C9773A]" : "text-[#7A6E63]"
+          }`}
+        >
+          <Coffee size={20} />
+          <span>Menu Catalog</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("cart")}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-bold relative ${
+            mobileTab === "cart" ? "text-[#C9773A]" : "text-[#7A6E63]"
+          }`}
+        >
+          <ShoppingBag size={20} />
+          <span>Current Order</span>
+          {cartItems.length > 0 && (
+            <span className="absolute top-2.5 right-[calc(50%-28px)] w-4.5 h-4.5 rounded-full bg-[#C9773A] text-white text-[9px] font-bold flex items-center justify-center border border-white">
+              {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+            </span>
+          )}
+        </button>
       </div>
 
       {showFloor && (
